@@ -1,23 +1,48 @@
-// MES.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include "pch.h"
 #include <iostream>
+#include "Header.h"
+#include <fstream>
+
 
 using namespace std;
 
+double delta_x;
+double delta_y;
+
 int main()
 {
-    cout << "Hello World!\n"; 
+	ifstream input_file("data.txt");
+	global_data gdata;
+	input_file >> gdata;
+
+	//TEST
+	cout << "gdata w:" << gdata.return_w() << endl;
+	cout << "gdata h:" << gdata.return_h() << endl;
+	//TEST/End
+
+	//func
+
+	double n_ND = 1;
+	delta_x = gdata.w / (gdata.n_w - 1);
+	delta_y = gdata.h / (gdata.n_h - 1);
+
+	gdata.n_n = gdata.n_w*gdata.n_h;
+	gdata.n_e = (gdata.n_w - 1)*(gdata.n_h - 1);
+	
+	
+	for (auto i=1; i<gdata.n_h; i++)
+	{
+		for(auto j=1; j<gdata.n_w;j++)
+		{
+			node *ND = new node[gdata.n_n];
+			ND[j].x = j * delta_x;
+			ND[j].x = j * delta_x;
+			n_ND++;
+		}
+	}
+	
+	
+
+	system("pause");
+	return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
