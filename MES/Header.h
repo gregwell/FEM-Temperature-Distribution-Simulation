@@ -5,6 +5,11 @@
 struct node {
 	double x; //coordinates
 	double y;
+	node()
+	{
+		x = 0.0;
+		y = 0.0;
+	}
 };
 
 struct element {
@@ -15,10 +20,10 @@ struct global_data {
 public:
 	double w; //width
 	double h; //height
-	double n_w; //number of nodes in width length
-	double n_h; //number of nodes in height length
-	double n_n; // m_n = m_w * m_h // number of nodes at all
-	double n_e; // m_e = (m_w-1)*(m_h-1) // number of elements?
+	int n_w; //number of nodes in width length
+	int n_h; //number of nodes in height length
+	int n_n; // m_n = m_w * m_h // number of nodes at all
+	int n_e; // m_e = (m_w-1)*(m_h-1) // number of elements?
 public:
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
