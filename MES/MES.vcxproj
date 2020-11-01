@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="calculate_integral.h" />
+    <ClInclude Include="elem4.h" />
     <ClInclude Include="mesh_generation.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
