@@ -20,7 +20,7 @@ struct elem4
 	}
 };
 
-void calculate_jacobian()
+void calculate_H()
 {
 	int x[4] = { 0,4,4,0 };
 	int y[4] = { 0,0,4,4 };

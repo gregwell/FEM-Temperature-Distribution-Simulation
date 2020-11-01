@@ -12,7 +12,7 @@ int main()
 	//cout << calculate_integral_3p();
 
 	//LAB 3:
-	calculate_jacobian();
+	calculate_H ();
 
 	
 	system("pause");
