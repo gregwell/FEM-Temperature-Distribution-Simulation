@@ -28,13 +28,13 @@ void calculate_jacobian()
 	double N_ksi[4][4];
 	double N_eta[4][4];
 
-	double dx_dksi = 0.0;
-	double dy_dksi = 0.0;
-	double dx_deta = 0.0;
-	double dy_deta = 0.0;
+	double dx_dksi[4] = { 0.0,0.0,0.0,0.0 };
+	double dy_dksi[4] = { 0.0,0.0,0.0,0.0 };
+	double dx_deta[4] = { 0.0,0.0,0.0,0.0 };
+	double dy_deta[4] = { 0.0,0.0,0.0,0.0 };
 
-	double J[2][2];
-	double det_J;
+	double J[4][2][2];
+	double det_J[4];
 
 
 	elem4 element;
@@ -52,23 +52,31 @@ void calculate_jacobian()
 		N_eta[i][1] = -1.0 / 4.0 * (1 + element.ksi[i]);
 		N_eta[i][2] = 1.0 / 4.0* (1 + element.ksi[i]);
 		N_eta[i][3] = 1.0 / 4.0 * (1 - element.ksi[i]);
-
-		//edit to powinno byc dla 4 pkt calkowania
-		dx_dksi += N_ksi[0][i] * x[i];
-		dy_dksi += N_ksi[0][i] * y[i];
-		dx_deta += N_eta[0][i] * x[i];
-		dy_deta += N_eta[0][i] * y[i];
+	}
+	
+	for (auto ip = 0; ip < 4; ip++)
+	{
+		for (auto i=0;i<4;i++)
+		{
+			dx_dksi[ip] += N_ksi[ip][i] * x[i];
+			dy_dksi[ip] += N_ksi[ip][i] * y[i];
+			dx_deta[ip] += N_eta[ip][i] * x[i];
+			dy_deta[ip] += N_eta[ip][i] * y[i];
+		}
 	}
 
-	//[row][column]
-	J[0][0] = dy_deta;
-	J[0][1] = -dy_dksi;
-	J[1][0] = -dx_deta;
-	J[1][1] = dx_dksi;
+	//J[integration_point][row][column]
+	for (auto ip=0;ip<4;ip++)
+	{
+		J[ip][0][0] = dy_deta[ip];
+		J[ip][0][1] = -dy_dksi[ip];
+		J[ip][1][0] = -dx_deta[ip];
+		J[ip][1][1] = dx_dksi[ip];
 
-	det_J = J[0][0] * J[1][1] - J[0][1] * J[1][0];
+		det_J[ip] = J[ip][0][0] * J[ip][1][1] - J[ip][0][1] * J[ip][1][0];
+	}
 
-	//cout << "Det J: " << det_J << endl;
+
 
 	//Lab4:
 	//[integration_point][dN1,dN2,dN3,dN4]
@@ -80,14 +88,20 @@ void calculate_jacobian()
 	{
 		for ( auto j=0;j<4;j++)
 		{
-			dN_dx[ip][j] = 1.0 / det_J * (N_ksi[ip][j] * dy_deta + N_eta[ip][j] * (-dy_dksi));
-			dN_dy[ip][j] = 1.0 / det_J * (N_ksi[ip][j] * (-dx_deta) + N_eta[ip][j] * dx_dksi);
+			dN_dx[ip][j] = 1.0 / det_J[ip] * (N_ksi[ip][j] * dy_deta[ip] + N_eta[ip][j] * (-dy_dksi[ip]));
+			dN_dy[ip][j] = 1.0 / det_J[ip] * (N_ksi[ip][j] * (-dx_deta[ip]) + N_eta[ip][j] * dx_dksi[ip]);
 		}
 	}
 
-	//[inetgration_point][column][row]
+
+
+	
+	
+	//[integration_point][column][row]
 	double dN_dx_dN_dx_T[4][4][4];
 	double dN_dy_dN_dy_T[4][4][4];
+	double H_point[4][4][4];
+	double H[4][4] = {0.0};
 
 	for(auto ip=0;ip<4;ip++)
 	{
@@ -97,12 +111,10 @@ void calculate_jacobian()
 			{
 				dN_dx_dN_dx_T[ip][i][j] = dN_dx[ip][i] * dN_dx[ip][j];
 				dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
+				H_point[ip][i][j] = 30 * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
+				H[i][j] += H_point[ip][i][j];
 			}
 		}
 	}
-
-	cout << ""
-
-
 	
 }
