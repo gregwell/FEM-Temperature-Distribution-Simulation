@@ -23,7 +23,7 @@ struct elem4
 void calculate_H()
 {
 	int x[4] = { 0,4,4,0 };
-	int y[4] = { 0,0,4,4 };
+	int y[4] = { 0,0,6,6 };
 
 	double N_ksi[4][4];
 	double N_eta[4][4];
@@ -94,9 +94,6 @@ void calculate_H()
 	}
 
 
-
-	
-	
 	//[integration_point][column][row]
 	double dN_dx_dN_dx_T[4][4][4];
 	double dN_dy_dN_dy_T[4][4][4];
