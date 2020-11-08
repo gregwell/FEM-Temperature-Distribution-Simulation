@@ -6,14 +6,17 @@
 int main()
 {
 	//LAB 1: 
-	//generate_mesh();
+	generate_mesh();
 	
 	//LAB 2:
 	//cout << calculate_integral_3p();
 
 	//LAB 3:
-	calculate_H ();
+	//element *test_element;
+	//calculate_H (test_element);
 
+	//cout << test_element->H[0][0] << endl;
+	
 	
 	system("pause");
 	return 0;
