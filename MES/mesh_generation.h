@@ -16,11 +16,6 @@ struct node {
 	}
 };
 
-//struct element_coordinates {
-//	double x[4]; //coordinates
-//	double y[4];
-//};
-
 struct element {
 	int id[4]; //id of all four nodes from each side
 	double H[4][4] = {0.0}; //H matrix of element
@@ -57,6 +52,7 @@ struct global_data {
 	}
 };
 
+//ELEMENT IN LOCAL COORDINATE SYSTEM
 struct elem4
 {
 	double ksi[4];
@@ -74,65 +70,65 @@ struct elem4
 		eta[2] = ip;
 		eta[3] = ip;
 	}
-	double H[4][4] = { 0.0 };
 };
 
 
 
 void calculate_H(element input_element[], int n_El, node ND[])
 {
+	//ITERATOR == NO OF CURRENT ELEMENT 
 	for (auto iterator = 1 ; iterator < n_El ; iterator++ )
 	{
+		//ASSIGNING X,Y COORDINATES OF CURRENT ELEMENT 
 		double x[4];
 		double y[4];
-		int temp;
-
+		
 		for (auto i = 0; i < 4; i++)
 		{
-			temp = input_element[iterator].id[i];
+			int temp = input_element[iterator].id[i];
 			x[i] = ND[temp].x;
 			y[i] = ND[temp].y;
 		}
-
-		double N_ksi[4][4];
-		double N_eta[4][4];
-
-		double dx_dksi[4] = { 0.0,0.0,0.0,0.0 };
-		double dy_dksi[4] = { 0.0,0.0,0.0,0.0 };
-		double dx_deta[4] = { 0.0,0.0,0.0,0.0 };
-		double dy_deta[4] = { 0.0,0.0,0.0,0.0 };
-
-		double J[4][2][2];
-		double det_J[4];
-
-
+		
+		//ASSIGNING VALUES TO SHAPE FUNCTIONS IN LOCAL COORDINATE SYSTEM
+		double dN_dksi[4][4];
+		double dN_deta[4][4];
 		elem4 element;
 
-		//Assigning values to the arrays dN1/dksi , dN2/dksi ... dN4/dksi
-		//N_ksi [integration point][N1,N2,N3,N4]
-		for (auto i = 0; i < 4; i++)
+		//dN_dksi[integration point][number of shape function]
+		for (auto ip = 0; ip < 4; ip++)
 		{
-			N_ksi[i][0] = -1.0 / 4.0 * (1.0 - element.eta[i]);
-			N_ksi[i][1] = 1.0 / 4.0 * (1 - element.eta[i]);
-			N_ksi[i][2] = 1.0 / 4.0 * (1 + element.eta[i]);
-			N_ksi[i][3] = -1.0 / 4.0 * (1 + element.eta[i]);
+			dN_dksi[ip][0] = -1.0 / 4.0 * (1.0 - element.eta[ip]);
+			dN_dksi[ip][1] = 1.0 / 4.0 * (1 - element.eta[ip]);
+			dN_dksi[ip][2] = 1.0 / 4.0 * (1 + element.eta[ip]);
+			dN_dksi[ip][3] = -1.0 / 4.0 * (1 + element.eta[ip]);
 
-			N_eta[i][0] = -1.0 / 4.0 * (1 - element.ksi[i]);
-			N_eta[i][1] = -1.0 / 4.0 * (1 + element.ksi[i]);
-			N_eta[i][2] = 1.0 / 4.0* (1 + element.ksi[i]);
-			N_eta[i][3] = 1.0 / 4.0 * (1 - element.ksi[i]);
+			dN_deta[ip][0] = -1.0 / 4.0 * (1 - element.ksi[ip]);
+			dN_deta[ip][1] = -1.0 / 4.0 * (1 + element.ksi[ip]);
+			dN_deta[ip][2] = 1.0 / 4.0* (1 + element.ksi[ip]);
+			dN_deta[ip][3] = 1.0 / 4.0 * (1 - element.ksi[ip]);
 		}
 
+		//CALCULATING VALUES OF JACOBI MATRIX COMPONENTS
+		double dx_dksi[4] = { 0.0 };
+		double dy_dksi[4] = { 0.0 };
+		double dx_deta[4] = { 0.0 };
+		double dy_deta[4] = { 0.0 };
+		
 		for (auto ip = 0; ip < 4; ip++)
 		{
 			for (auto i = 0; i < 4; i++)
 			{
-				dx_dksi[ip] += N_ksi[ip][i] * x[i];
-				dy_dksi[ip] += N_ksi[ip][i] * y[i];
-				dx_deta[ip] += N_eta[ip][i] * x[i];
-				dy_deta[ip] += N_eta[ip][i] * y[i];
+				dx_dksi[ip] += dN_dksi[ip][i] * x[i];
+				dy_dksi[ip] += dN_dksi[ip][i] * y[i];
+				dx_deta[ip] += dN_deta[ip][i] * x[i];
+				dy_deta[ip] += dN_deta[ip][i] * y[i];
 			}
 		}
+
+		//ASSIGNING VALUES TO JACOBI MATRIX COMPONENTS
+		double J[4][2][2];
+		double det_J[4];
 
 		//J[integration_point][row][column]
 		for (auto ip = 0; ip < 4; ip++)
@@ -145,6 +141,8 @@ void calculate_H(element input_element[], int n_El, node ND[])
 			det_J[ip] = J[ip][0][0] * J[ip][1][1] - J[ip][0][1] * J[ip][1][0];
 		}
 
+		//CALCULATING DERIVATIVES OF SHAPE FUNCTIONS WITH RESPECT TO X,Y
+		
 		//[integration_point][dN1,dN2,dN3,dN4]
 		double dN_dx[4][4];
 		double dN_dy[4][4];
@@ -153,12 +151,13 @@ void calculate_H(element input_element[], int n_El, node ND[])
 		{
 			for (auto j = 0; j < 4; j++)
 			{
-				dN_dx[ip][j] = 1.0 / det_J[ip] * (N_ksi[ip][j] * dy_deta[ip] + N_eta[ip][j] * (-dy_dksi[ip]));
-				dN_dy[ip][j] = 1.0 / det_J[ip] * (N_ksi[ip][j] * (-dx_deta[ip]) + N_eta[ip][j] * dx_dksi[ip]);
+				dN_dx[ip][j] = 1.0 / det_J[ip] * (dN_dksi[ip][j] * dy_deta[ip] + dN_deta[ip][j] * (-dy_dksi[ip]));
+				dN_dy[ip][j] = 1.0 / det_J[ip] * (dN_dksi[ip][j] * (-dx_deta[ip]) + dN_deta[ip][j] * dx_dksi[ip]);
 			}
 		}
 
-
+		//CALCULATING H MATRIX
+		
 		//[integration_point][column][row]
 		double dN_dx_dN_dx_T[4][4][4];
 		double dN_dy_dN_dy_T[4][4][4];
@@ -173,16 +172,8 @@ void calculate_H(element input_element[], int n_El, node ND[])
 					dN_dx_dN_dx_T[ip][i][j] = dN_dx[ip][i] * dN_dx[ip][j];
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
 					H_point[ip][i][j] = 30 * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
-					element.H[i][j] += H_point[ip][i][j];
+					input_element[iterator].H[i][j] += H_point[ip][i][j];
 				}
-			}
-		}
-
-		for (auto i = 0; i < 4; i++)
-		{
-			for (auto j = 0; j < 4; j++)
-			{
-				input_element[iterator].H[i][j] = element.H[i][j];
 			}
 		}
 	}
