@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 
 using namespace std;
@@ -27,7 +28,7 @@ struct global_data {
 	int n_w; //number of nodes in width length
 	int n_h; //number of nodes in height length
 	int n_n; // m_n = m_w * m_h // number of nodes at all
-	int n_e; // m_e = (m_w-1)*(m_h-1) // number of elements?
+	int n_e; // n_e = (m_w-1)*(m_h-1) // number of elements
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -237,8 +238,64 @@ void inline generate_mesh()
 
 	calculate_H(Elem, n_El, ND);
 	
-	cout << "to jest elem8 h00: " << Elem[8].H[1][0] << endl;
-	cout << "to jest elem8 h01: " << Elem[8].H[1][1] << endl;
-	cout << "to jest elem8 h00: " << Elem[8].H[1][2] << endl;
-	cout << "to jest elem8 h01: " << Elem[8].H[1][3] << endl;
+	cout << "to jest elem8 h00: " << Elem[2].H[0][0] << endl;
+	cout << "to jest elem8 h01: " << Elem[2].H[0][1] << endl;
+	cout << "to jest elem8 h00: " << Elem[2].H[0][2] << endl;
+	cout << "to jest elem8 h01: " << Elem[2].H[0][3] << endl;
+
+	//double HG[17][17] = {0.0};
+	//
+	//for (auto element_no = 1; element_no < gdata.n_e; element_no++)
+	//{
+	//	for (auto i = 0; i < 4; i++)
+	//	{
+	//		for (auto j = 0; j < 4; j++)
+	//		{
+	//			auto d1 = Elem[element_no].id[i];
+	//			auto d2 = Elem[element_no].id[j];
+	//			
+	//			HG[d1][d2] = Elem[element_no].H[i][j];
+	//		}
+	//	}
+	//}
+
+	//delete the last row/column TODO
+
+	double** HG = new double*[gdata.n_n];
+	
+	for (int i = 0; i < gdata.n_n; i++) 
+	{
+		HG[i] = new double[gdata.n_n];
+	}
+	
+	for (int i = 0; i < gdata.n_n; i++)
+	{
+		for (int j = 0; j < gdata.n_n; j++)
+		{
+			HG[i][j] = 0.0;
+		}
+	}
+
+
+	for (int k = 1; k < gdata.n_e; k++)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				HG[Elem[k].id[i]-1][Elem[k].id[j]-1] += Elem[k].H[i][j];
+			}
+		}
+	}
+
+	for (int i = 0; i < gdata.n_n; i++)
+	{
+		for (int j = 0; j < gdata.n_n; j++)
+		{
+			cout << setfill(' ') << setw(5) << setprecision(4) << HG[i][j] << "\t";
+		}
+		cout << endl;
+
+	}
+	
 }
