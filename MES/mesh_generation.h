@@ -36,7 +36,6 @@ struct global_data {
 		std::string line;
 		std::getline(is, line);
 		std::istringstream iss(line);
-
 		std::string temp;
 		iss >> global_data.w;
 		iss >> global_data.h;
@@ -44,16 +43,7 @@ struct global_data {
 		iss >> global_data.n_h;
 		iss >> global_data.order_of_integration;
 		iss >> global_data.thermal_conductivity;
-
 		return is;
-	}
-	double return_w()
-	{
-		return w;
-	}
-	double return_h()
-	{
-		return h;
 	}
 };
 
@@ -109,15 +99,11 @@ struct elem4
 		default:
 			cout << "";
 		}
-
 	}
 };
 
-
 void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration, double thermal_conductivity)
 {
-	
-
 	int points = order_of_integration * order_of_integration;
 	const int max_points = 16;
 	
@@ -182,12 +168,10 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 			J[ip][0][1] = -dy_dksi[ip];
 			J[ip][1][0] = -dx_deta[ip];
 			J[ip][1][1] = dx_dksi[ip];
-
 			det_J[ip] = J[ip][0][0] * J[ip][1][1] - J[ip][0][1] * J[ip][1][0];
 		}
 
 		//CALCULATING DERIVATIVES OF SHAPE FUNCTIONS WITH RESPECT TO X,Y
-		
 		//[integration_point][dN1,dN2,dN3,dN4]
 		double dN_dx[max_points][4];
 		double dN_dy[max_points][4];
@@ -202,12 +186,9 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 
 		//CALCULATING H MATRIX
-		
 		//[integration_point][column][row]
-
 		double dN_dx_dN_dx_T[max_points][4][4];
 		double dN_dy_dN_dy_T[max_points][4][4];
-
 		double H_point[max_points][4][4];
 
 		for (auto ip = 0; ip < points; ip++)
@@ -220,7 +201,6 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
 					H_point[ip][i][j] = thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
 					input_element[iterator].H[i][j] += H_point[ip][i][j]*element.multiplier[ip];
-					
 				}
 			}
 		}
@@ -229,18 +209,9 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 
 void inline generate_mesh()
 {
-
 	ifstream input_file("data.txt");
 	global_data gdata;
 	input_file >> gdata;
-
-	//TEST
-	cout << "gdata w:" << gdata.return_w() << endl;
-	cout << "gdata h:" << gdata.return_h() << endl;
-	//TEST/End
-
-	//func
-
 	int n_ND = 1; //node array number.
 	double x = 0;
 	double y = 0;
@@ -249,22 +220,19 @@ void inline generate_mesh()
 	gdata.n_n = gdata.n_w*gdata.n_h; //number of nodes
 	gdata.n_e = (gdata.n_w - 1)*(gdata.n_h - 1); //number of elements
 
-	//Assigning coordinates (x,y) to every node.
+	//ASSIGNING COORDINATES(X,Y) TO EACH NODE
 	node *ND = new node[gdata.n_n + 1];
-
 	for (auto i = 0; i < gdata.n_w; i++) //width
 	{
 		for (auto j = 0; j < gdata.n_h; j++) //height
 		{
 			ND[n_ND].x = i * delta_x;
 			ND[n_ND].y = j * delta_y;
-			cout << "I'm inside node n_Nd=" << n_ND << "/ ND[n_ND].x = " << i * delta_x << "/ ND[n_ND].y=" << j * delta_y << endl;
 			n_ND++;
-
 		}
 	}
 
-	//Assigning nodes to elements.
+	//ASSINGING NODES TO ELEMENTS
 	int n_El = 1; //node array number
 	int k = 0;
 	element *Elem = new element[gdata.n_e + 1];
@@ -277,18 +245,12 @@ void inline generate_mesh()
 			Elem[n_El].id[1] = n_El + gdata.n_h + k;
 			Elem[n_El].id[2] = n_El + gdata.n_h + 1 + k;
 			Elem[n_El].id[3] = n_El + 1 + k;
-			cout << "I'm inside n_el=" << n_El << "/ id1=  " << n_El + k << "/// id2= " << n_El + gdata.n_h + k << endl;
 			n_El++;
 		}
 		k++;
 	}
 
 	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity);
-	
-	cout << "to jest elem8 h00: " << Elem[2].H[0][0] << endl;
-	cout << "to jest elem8 h01: " << Elem[2].H[0][1] << endl;
-	cout << "to jest elem8 h00: " << Elem[2].H[0][2] << endl;
-	cout << "to jest elem8 h01: " << Elem[2].H[0][3] << endl;
 
 	//delete the last row/column TODO
 
