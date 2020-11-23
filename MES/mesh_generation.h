@@ -61,7 +61,8 @@ struct elem4
 	double ksi[16];
 	double eta[16];
 	double ip;
-	double weight[3];
+	double ip_greater;
+	double weight[4];
 	double multiplier[16];
 	
 	elem4(int order_of_integration)
@@ -95,21 +96,33 @@ struct elem4
 				multiplier[2+n*3] = weight[2] * weight[n];
 			}
 			break;
+		case 4:
+			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0)*sqrt((6.0 / 5.0)));
+			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0)*sqrt((6.0 / 5.0)));
+			weight[0] = weight[3] = (18.0 - sqrt(30.0)) / 36;
+			weight[1] = weight[2] = (18.0 + sqrt(30.0)) / 36;
+			for (auto n = 0; n < 4; n++)
+			{
+				ksi[0 + n * 4] = eta[0 + n] = -ip_greater;
+				ksi[1 + n * 4] = eta[4 + n] = -ip;
+				ksi[2 + n * 4] = eta[8 + n] = ip;
+				ksi[3 + n * 4] = eta[12 + n] = ip_greater;
+				multiplier[0 + n * 4] = weight[0] * weight[n];
+				multiplier[1 + n * 4] = weight[1] * weight[n];
+				multiplier[2 + n * 4] = weight[2] * weight[n];
+				multiplier[3 + n * 4] = weight[3] * weight[n];
+			}
+			break;
 		default:
-			cout << "Oops. Wrong order of integration. Check your file data.";
+			cout << "";
 		}
 
 	}
 };
 
 
-
-
-
-
 void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration)
 {
-	// TODO: zamienić wszelkie pętle po ilości ip na points
 
 	int points = order_of_integration * order_of_integration;
 	
@@ -128,8 +141,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 		
 		//ASSIGNING VALUES TO SHAPE FUNCTIONS IN LOCAL COORDINATE SYSTEM
-		double dN_dksi[9][4];
-		double dN_deta[9][4];
+		double dN_dksi[16][4];
+		double dN_deta[16][4];
 		elem4 element(order_of_integration);
 
 		//dN_dksi[integration point][number of shape function]
@@ -147,10 +160,10 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 
 		//CALCULATING VALUES OF JACOBI MATRIX COMPONENTS
-		double dx_dksi[9] = { 0.0 };
-		double dy_dksi[9] = { 0.0 };
-		double dx_deta[9] = { 0.0 };
-		double dy_deta[9] = { 0.0 };
+		double dx_dksi[16] = { 0.0 };
+		double dy_dksi[16] = { 0.0 };
+		double dx_deta[16] = { 0.0 };
+		double dy_deta[16] = { 0.0 };
 		
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -164,8 +177,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 
 		//ASSIGNING VALUES TO JACOBI MATRIX COMPONENTS
-		double J[9][2][2];
-		double det_J[9];
+		double J[16][2][2];
+		double det_J[16];
 
 		//J[integration_point][row][column]
 		for (auto ip = 0; ip < points; ip++)
@@ -181,8 +194,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		//CALCULATING DERIVATIVES OF SHAPE FUNCTIONS WITH RESPECT TO X,Y
 		
 		//[integration_point][dN1,dN2,dN3,dN4]
-		double dN_dx[9][4];
-		double dN_dy[9][4];
+		double dN_dx[16][4];
+		double dN_dy[16][4];
 
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -197,10 +210,10 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		
 		//[integration_point][column][row]
 
-		double dN_dx_dN_dx_T[9][4][4];
-		double dN_dy_dN_dy_T[9][4][4];
+		double dN_dx_dN_dx_T[16][4][4];
+		double dN_dy_dN_dy_T[16][4][4];
 
-		double H_point[9][4][4];
+		double H_point[16][4][4];
 
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -299,7 +312,6 @@ void inline generate_mesh()
 		}
 	}
 
-
 	for (int k = 1; k < gdata.n_e; k++)
 	{
 		for (int i = 0; i < 4; i++)
@@ -318,7 +330,5 @@ void inline generate_mesh()
 			cout << setfill(' ') << setw(5) << setprecision(4) << HG[i][j] << "\t";
 		}
 		cout << endl;
-
 	}
-	
 }
