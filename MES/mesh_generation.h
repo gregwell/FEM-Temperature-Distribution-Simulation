@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -29,6 +29,7 @@ struct global_data {
 	int n_h; //number of nodes in height length
 	int n_n; // m_n = m_w * m_h // number of nodes at all
 	int n_e; // n_e = (m_w-1)*(m_h-1) // number of elements
+	int order_of_integration; //number of Gauss points
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -40,6 +41,7 @@ struct global_data {
 		iss >> global_data.h;
 		iss >> global_data.n_w;
 		iss >> global_data.n_h;
+		iss >> global_data.order_of_integration;
 
 		return is;
 	}
@@ -56,27 +58,61 @@ struct global_data {
 //ELEMENT IN LOCAL COORDINATE SYSTEM
 struct elem4
 {
-	double ksi[4];
-	double eta[4];
-	double ip = 1.0 / sqrt(3);
-	elem4()
+	double ksi[16];
+	double eta[16];
+	double ip;
+	double weight[3];
+	double multiplier[16];
+	
+	elem4(int order_of_integration)
 	{
-		ksi[0] = -ip;
-		ksi[1] = ip;
-		ksi[2] = ip;
-		ksi[3] = -ip;
+		switch(order_of_integration)
+		{
+		case 2:
+			ip = 1.0 / sqrt(3);
+			ksi[0] = -ip;
+			ksi[1] = ip;
+			ksi[2] = ip;
+			ksi[3] = -ip;
 
-		eta[0] = -ip;
-		eta[1] = -ip;
-		eta[2] = ip;
-		eta[3] = ip;
+			eta[0] = -ip;
+			eta[1] = -ip;
+			eta[2] = ip;
+			eta[3] = ip;
+			for(auto n =0; n<4; n++) multiplier[n] = 1.0;
+			break;
+		case 3:
+			ip = 1.0*sqrt(3.0 / 5.0);
+			weight[0] = weight[2] = 5.0 / 9.0;
+			weight[1] = 8.0 / 9.0;
+			for ( auto n=0; n<3;n++)
+			{
+				ksi[0+n*3] = eta[0 + n]  = -ip;
+				ksi[1+n*3] = eta[3 + n] = 0;
+				ksi[2+n*3] = eta[6 + n]= ip;
+				multiplier[0+n*3] = weight[0] * weight[n];
+				multiplier[1+n*3] = weight[1] * weight[n];
+				multiplier[2+n*3] = weight[2] * weight[n];
+			}
+			break;
+		default:
+			cout << "Oops. Wrong order of integration. Check your file data.";
+		}
+
 	}
 };
 
 
 
-void calculate_H(element input_element[], int n_El, node ND[])
+
+
+
+void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration)
 {
+	// TODO: zamienić wszelkie pętle po ilości ip na points
+
+	int points = order_of_integration * order_of_integration;
+	
 	//ITERATOR == NO OF CURRENT ELEMENT 
 	for (auto iterator = 1 ; iterator < n_El ; iterator++ )
 	{
@@ -92,12 +128,12 @@ void calculate_H(element input_element[], int n_El, node ND[])
 		}
 		
 		//ASSIGNING VALUES TO SHAPE FUNCTIONS IN LOCAL COORDINATE SYSTEM
-		double dN_dksi[4][4];
-		double dN_deta[4][4];
-		elem4 element;
+		double dN_dksi[9][4];
+		double dN_deta[9][4];
+		elem4 element(order_of_integration);
 
 		//dN_dksi[integration point][number of shape function]
-		for (auto ip = 0; ip < 4; ip++)
+		for (auto ip = 0; ip < points; ip++)
 		{
 			dN_dksi[ip][0] = -1.0 / 4.0 * (1.0 - element.eta[ip]);
 			dN_dksi[ip][1] = 1.0 / 4.0 * (1 - element.eta[ip]);
@@ -111,12 +147,12 @@ void calculate_H(element input_element[], int n_El, node ND[])
 		}
 
 		//CALCULATING VALUES OF JACOBI MATRIX COMPONENTS
-		double dx_dksi[4] = { 0.0 };
-		double dy_dksi[4] = { 0.0 };
-		double dx_deta[4] = { 0.0 };
-		double dy_deta[4] = { 0.0 };
+		double dx_dksi[9] = { 0.0 };
+		double dy_dksi[9] = { 0.0 };
+		double dx_deta[9] = { 0.0 };
+		double dy_deta[9] = { 0.0 };
 		
-		for (auto ip = 0; ip < 4; ip++)
+		for (auto ip = 0; ip < points; ip++)
 		{
 			for (auto i = 0; i < 4; i++)
 			{
@@ -128,11 +164,11 @@ void calculate_H(element input_element[], int n_El, node ND[])
 		}
 
 		//ASSIGNING VALUES TO JACOBI MATRIX COMPONENTS
-		double J[4][2][2];
-		double det_J[4];
+		double J[9][2][2];
+		double det_J[9];
 
 		//J[integration_point][row][column]
-		for (auto ip = 0; ip < 4; ip++)
+		for (auto ip = 0; ip < points; ip++)
 		{
 			J[ip][0][0] = dy_deta[ip];
 			J[ip][0][1] = -dy_dksi[ip];
@@ -145,10 +181,10 @@ void calculate_H(element input_element[], int n_El, node ND[])
 		//CALCULATING DERIVATIVES OF SHAPE FUNCTIONS WITH RESPECT TO X,Y
 		
 		//[integration_point][dN1,dN2,dN3,dN4]
-		double dN_dx[4][4];
-		double dN_dy[4][4];
+		double dN_dx[9][4];
+		double dN_dy[9][4];
 
-		for (auto ip = 0; ip < 4; ip++)
+		for (auto ip = 0; ip < points; ip++)
 		{
 			for (auto j = 0; j < 4; j++)
 			{
@@ -160,11 +196,13 @@ void calculate_H(element input_element[], int n_El, node ND[])
 		//CALCULATING H MATRIX
 		
 		//[integration_point][column][row]
-		double dN_dx_dN_dx_T[4][4][4];
-		double dN_dy_dN_dy_T[4][4][4];
-		double H_point[4][4][4];
 
-		for (auto ip = 0; ip < 4; ip++)
+		double dN_dx_dN_dx_T[9][4][4];
+		double dN_dy_dN_dy_T[9][4][4];
+
+		double H_point[9][4][4];
+
+		for (auto ip = 0; ip < points; ip++)
 		{
 			for (auto i = 0; i < 4; i++)
 			{
@@ -173,7 +211,8 @@ void calculate_H(element input_element[], int n_El, node ND[])
 					dN_dx_dN_dx_T[ip][i][j] = dN_dx[ip][i] * dN_dx[ip][j];
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
 					H_point[ip][i][j] = 30 * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
-					input_element[iterator].H[i][j] += H_point[ip][i][j];
+					input_element[iterator].H[i][j] += H_point[ip][i][j]*element.multiplier[ip];
+					
 				}
 			}
 		}
@@ -236,28 +275,12 @@ void inline generate_mesh()
 		k++;
 	}
 
-	calculate_H(Elem, n_El, ND);
+	calculate_H(Elem, n_El, ND, gdata.order_of_integration);
 	
 	cout << "to jest elem8 h00: " << Elem[2].H[0][0] << endl;
 	cout << "to jest elem8 h01: " << Elem[2].H[0][1] << endl;
 	cout << "to jest elem8 h00: " << Elem[2].H[0][2] << endl;
 	cout << "to jest elem8 h01: " << Elem[2].H[0][3] << endl;
-
-	//double HG[17][17] = {0.0};
-	//
-	//for (auto element_no = 1; element_no < gdata.n_e; element_no++)
-	//{
-	//	for (auto i = 0; i < 4; i++)
-	//	{
-	//		for (auto j = 0; j < 4; j++)
-	//		{
-	//			auto d1 = Elem[element_no].id[i];
-	//			auto d2 = Elem[element_no].id[j];
-	//			
-	//			HG[d1][d2] = Elem[element_no].H[i][j];
-	//		}
-	//	}
-	//}
 
 	//delete the last row/column TODO
 
