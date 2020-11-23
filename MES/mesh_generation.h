@@ -30,6 +30,7 @@ struct global_data {
 	int n_n; // m_n = m_w * m_h // number of nodes at all
 	int n_e; // n_e = (m_w-1)*(m_h-1) // number of elements
 	int order_of_integration; //number of Gauss points
+	double thermal_conductivity;
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -42,6 +43,7 @@ struct global_data {
 		iss >> global_data.n_w;
 		iss >> global_data.n_h;
 		iss >> global_data.order_of_integration;
+		iss >> global_data.thermal_conductivity;
 
 		return is;
 	}
@@ -121,10 +123,12 @@ struct elem4
 };
 
 
-void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration)
+void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration, double thermal_conductivity)
 {
+	
 
 	int points = order_of_integration * order_of_integration;
+	const int max_points = 16;
 	
 	//ITERATOR == NO OF CURRENT ELEMENT 
 	for (auto iterator = 1 ; iterator < n_El ; iterator++ )
@@ -141,8 +145,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 		
 		//ASSIGNING VALUES TO SHAPE FUNCTIONS IN LOCAL COORDINATE SYSTEM
-		double dN_dksi[16][4];
-		double dN_deta[16][4];
+		double dN_dksi[max_points][4];
+		double dN_deta[max_points][4];
 		elem4 element(order_of_integration);
 
 		//dN_dksi[integration point][number of shape function]
@@ -160,10 +164,10 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 
 		//CALCULATING VALUES OF JACOBI MATRIX COMPONENTS
-		double dx_dksi[16] = { 0.0 };
-		double dy_dksi[16] = { 0.0 };
-		double dx_deta[16] = { 0.0 };
-		double dy_deta[16] = { 0.0 };
+		double dx_dksi[max_points] = { 0.0 };
+		double dy_dksi[max_points] = { 0.0 };
+		double dx_deta[max_points] = { 0.0 };
+		double dy_deta[max_points] = { 0.0 };
 		
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -177,8 +181,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		}
 
 		//ASSIGNING VALUES TO JACOBI MATRIX COMPONENTS
-		double J[16][2][2];
-		double det_J[16];
+		double J[max_points][2][2];
+		double det_J[max_points];
 
 		//J[integration_point][row][column]
 		for (auto ip = 0; ip < points; ip++)
@@ -194,8 +198,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		//CALCULATING DERIVATIVES OF SHAPE FUNCTIONS WITH RESPECT TO X,Y
 		
 		//[integration_point][dN1,dN2,dN3,dN4]
-		double dN_dx[16][4];
-		double dN_dy[16][4];
+		double dN_dx[max_points][4];
+		double dN_dy[max_points][4];
 
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -210,10 +214,10 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 		
 		//[integration_point][column][row]
 
-		double dN_dx_dN_dx_T[16][4][4];
-		double dN_dy_dN_dy_T[16][4][4];
+		double dN_dx_dN_dx_T[max_points][4][4];
+		double dN_dy_dN_dy_T[max_points][4][4];
 
-		double H_point[16][4][4];
+		double H_point[max_points][4][4];
 
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -223,7 +227,7 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 				{
 					dN_dx_dN_dx_T[ip][i][j] = dN_dx[ip][i] * dN_dx[ip][j];
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
-					H_point[ip][i][j] = 30 * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
+					H_point[ip][i][j] = thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
 					input_element[iterator].H[i][j] += H_point[ip][i][j]*element.multiplier[ip];
 					
 				}
@@ -288,7 +292,7 @@ void inline generate_mesh()
 		k++;
 	}
 
-	calculate_H(Elem, n_El, ND, gdata.order_of_integration);
+	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity);
 	
 	cout << "to jest elem8 h00: " << Elem[2].H[0][0] << endl;
 	cout << "to jest elem8 h01: " << Elem[2].H[0][1] << endl;
