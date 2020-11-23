@@ -73,15 +73,11 @@ struct elem4
 		{
 		case 2:
 			ip = 1.0 / sqrt(3);
-			ksi[0] = -ip;
-			ksi[1] = ip;
-			ksi[2] = ip;
-			ksi[3] = -ip;
-
-			eta[0] = -ip;
-			eta[1] = -ip;
-			eta[2] = ip;
-			eta[3] = ip;
+			for(auto n =0; n<2;n++)
+			{
+				ksi[0 + n * 3] = eta[0 + n] = -ip;
+				ksi[1 + n] = eta[2 + n] = ip;
+			}
 			for(auto n =0; n<4; n++) multiplier[n] = 1.0;
 			break;
 		case 3:
@@ -93,9 +89,7 @@ struct elem4
 				ksi[0+n*3] = eta[0 + n]  = -ip;
 				ksi[1+n*3] = eta[3 + n] = 0;
 				ksi[2+n*3] = eta[6 + n]= ip;
-				multiplier[0+n*3] = weight[0] * weight[n];
-				multiplier[1+n*3] = weight[1] * weight[n];
-				multiplier[2+n*3] = weight[2] * weight[n];
+				for (auto i = 0; i < 3; i++) multiplier[i + n * 3] = weight[i] * weight[n];
 			}
 			break;
 		case 4:
@@ -109,10 +103,7 @@ struct elem4
 				ksi[1 + n * 4] = eta[4 + n] = -ip;
 				ksi[2 + n * 4] = eta[8 + n] = ip;
 				ksi[3 + n * 4] = eta[12 + n] = ip_greater;
-				multiplier[0 + n * 4] = weight[0] * weight[n];
-				multiplier[1 + n * 4] = weight[1] * weight[n];
-				multiplier[2 + n * 4] = weight[2] * weight[n];
-				multiplier[3 + n * 4] = weight[3] * weight[n];
+				for (auto i=0; i<4;i++) multiplier[i + n * 4] = weight[i] * weight[n];
 			}
 			break;
 		default:
