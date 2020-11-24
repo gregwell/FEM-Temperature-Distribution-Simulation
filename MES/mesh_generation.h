@@ -19,7 +19,8 @@ struct node {
 
 struct element {
 	int id[4]; //id of all four nodes from each side
-	double H[4][4] = {0.0}; //H matrix of element
+	double H[4][4] = { 0.0 }; //H matrix of element
+	double C[4][4] = { 0.0 }; //C matrix of element
 };
 
 struct global_data {
@@ -30,7 +31,9 @@ struct global_data {
 	int n_n; // m_n = m_w * m_h // number of nodes at all
 	int n_e; // n_e = (m_w-1)*(m_h-1) // number of elements
 	int order_of_integration; //number of Gauss points
-	double thermal_conductivity;
+	double thermal_conductivity; //(k)
+	double density; //(ro)
+	double specific_heat; //(c)
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -43,6 +46,8 @@ struct global_data {
 		iss >> global_data.n_h;
 		iss >> global_data.order_of_integration;
 		iss >> global_data.thermal_conductivity;
+		iss >> global_data.density;
+		iss >> global_data.specific_heat;
 		return is;
 	}
 };
@@ -102,7 +107,7 @@ struct elem4
 	}
 };
 
-void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration, double thermal_conductivity)
+void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration, double thermal_conductivity, double density, double specific_heat)
 {
 	int points = order_of_integration * order_of_integration;
 	const int max_points = 16;
@@ -185,11 +190,24 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 			}
 		}
 
-		//CALCULATING H MATRIX
+		//24.11 added (1)
+		double N[max_points][4];
+		for (auto ip = 0; ip < points; ip++)
+		{
+			N[ip][0] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 - element.eta[ip]);
+			N[ip][1] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 - element.eta[ip]);
+			N[ip][2] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 + element.eta[ip]);
+			N[ip][3] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 + element.eta[ip]);
+		}
+
+		//CALCULATING H MATRIX +//24.11 added C MATRIX
 		//[integration_point][column][row]
 		double dN_dx_dN_dx_T[max_points][4][4];
 		double dN_dy_dN_dy_T[max_points][4][4];
 		double H_point[max_points][4][4];
+
+		double NNT[max_points][4][4];
+		double C_point[max_points][4][4];
 
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -201,9 +219,14 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
 					H_point[ip][i][j] = thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
 					input_element[iterator].H[i][j] += H_point[ip][i][j]*element.multiplier[ip];
+
+					NNT[ip][i][j] = N[ip][i] * N[ip][j];
+					C_point[ip][i][j] = specific_heat * density * NNT[ip][i][j] * det_J[ip];
+					input_element[iterator].C[i][j] += C_point[ip][i][j]*element.multiplier[ip];
 				}
 			}
 		}
+		// TODO: the "ip<points" loops can be executed in just one loop
 	}
 }
 
@@ -250,15 +273,17 @@ void inline generate_mesh()
 		k++;
 	}
 
-	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity);
+	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
 
 	//delete the last row/column TODO
 
 	double** HG = new double*[gdata.n_n];
+	double** CG = new double*[gdata.n_n];
 	
 	for (int i = 0; i < gdata.n_n; i++) 
 	{
 		HG[i] = new double[gdata.n_n];
+		CG[i] = new double[gdata.n_n];
 	}
 	
 	for (int i = 0; i < gdata.n_n; i++)
@@ -266,6 +291,7 @@ void inline generate_mesh()
 		for (int j = 0; j < gdata.n_n; j++)
 		{
 			HG[i][j] = 0.0;
+			CG[i][j] = 0.0;
 		}
 	}
 
@@ -275,7 +301,8 @@ void inline generate_mesh()
 		{
 			for (int j = 0; j < 4; j++)
 			{
-				HG[Elem[k].id[i]-1][Elem[k].id[j]-1] += Elem[k].H[i][j];
+				HG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].H[i][j];
+				CG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].C[i][j];
 			}
 		}
 	}
@@ -284,8 +311,12 @@ void inline generate_mesh()
 	{
 		for (int j = 0; j < gdata.n_n; j++)
 		{
-			cout << setfill(' ') << setw(5) << setprecision(4) << HG[i][j] << "\t";
+			cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
 		}
 		cout << endl;
 	}
+	
+
+
+	
 }
