@@ -107,25 +107,11 @@ struct elem4
 			break;
 		case 666: 
 			ip = 1.0 / sqrt(3);
-			
-			ksi[0] = -ip;
-			eta[0] = eta[1] = -1;
-			ksi[1] = ip;
-			
-			ksi[2] = ksi[3] = 1;
-			eta[2] = -ip;
-			eta[3] = ip;
-
-			ksi[4] = ip;
-			eta[4] = eta[5] = 1;
-			ksi[5] = -ip;
-
-			ksi[6] = ksi[7] = -1;
-			eta[6] = ip;
-			eta[7] = -ip;
-
+			ksi[0] = eta[2] = ksi[5] = eta[7] = -ip;
+			ksi[1] = eta[3] = ksi[4] = eta[6] = ip;
+			ksi[2] = ksi[3] = eta[4] = eta[5] = 1;
+			eta[0] = eta[1] = ksi[6] = ksi[7] = -1;
 			multiplier[0] = 1;
-			
 			break;
 		default:
 			cout << "";
