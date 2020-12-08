@@ -36,6 +36,7 @@ struct global_data {
 	double thermal_conductivity; //(k)
 	double density; //(ro)
 	double specific_heat; //(c)
+	double convective_heat_transfer_coefficient; //(alfa)
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -50,6 +51,7 @@ struct global_data {
 		iss >> global_data.thermal_conductivity;
 		iss >> global_data.density;
 		iss >> global_data.specific_heat;
+		iss >> global_data.convective_heat_transfer_coefficient;
 		return is;
 	}
 };
@@ -121,7 +123,8 @@ struct elem4
 			ksi[6] = ksi[7] = -1;
 			eta[6] = ip;
 			eta[7] = -ip;
-			
+
+			multiplier[0] = 1;
 			
 			break;
 		default:
@@ -134,6 +137,8 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 {
 	int points = order_of_integration * order_of_integration;
 	const int max_points = 16;
+
+
 	
 	//ITERATOR == NO OF CURRENT ELEMENT 
 	for (auto iterator = 1 ; iterator < n_El ; iterator++ )
@@ -253,14 +258,14 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 	}
 }
 
-void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[])
+void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[], double convective_heat_transfer_coefficient, double delta_x, double delta_y)
 {
 	//TODO: perform only if BC==1 for each node..
 
 	const int max_points = 16;
 	int points = order_of_integration;
 
-	// 666 - test
+	// 666 - test 
 	elem4 element(666);
 	
 	double N[max_points][4];
@@ -268,10 +273,11 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	double HBC_point[max_points][4][4];
 	double NNT[max_points][4][4];
 	double HBC[16][4][4] = {0.0};
+	double L;
 	//16 zmienic na ilosc elementow maks
 
 	int boundary=0;
-	bool vertical;
+	//bool vertical;
 	for (auto iterator = 1; iterator < n_El; iterator++)
 	{
 
@@ -308,8 +314,12 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 						for (auto j = 0; j < 4; j++)
 						{
 							NNT[ip][i][j] = N[ip][i] * N[ip][j];
-							HBC_point[ip][i][j] = 25.0 * NNT[ip][i][j] * 0.1/2/3; //width 0.1 lub height 0.1 podzielic na liczbe elementow po wysokosci/szerokosci
-							HBC[iterator][i][j] += HBC_point[ip][i][j] * 1;
+							if (boundary == 0 || boundary == 4) L = delta_x;
+							else L = delta_y;
+							
+							HBC_point[ip][i][j] = convective_heat_transfer_coefficient * NNT[ip][i][j] * L/2; 
+							HBC[iterator][i][j] += HBC_point[ip][i][j] * element.multiplier[0];
+							input_element[iterator].H[i][j] += HBC[iterator][i][j];
 						}
 					}
 				}
@@ -394,7 +404,7 @@ void inline generate_mesh()
 	}
 
 	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
-	calculateHBC(Elem, gdata.order_of_integration, n_El, ND);
+	calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y);
 	
 	//delete the last row/column TODO
 
@@ -428,6 +438,7 @@ void inline generate_mesh()
 		}
 	}
 
+	cout << "macierz CG: " << endl;
 	for (int i = 0; i < gdata.n_n; i++)
 	{
 		for (int j = 0; j < gdata.n_n; j++)
@@ -436,8 +447,15 @@ void inline generate_mesh()
 		}
 		cout << endl;
 	}
-	
 
+	cout << "macierz HG: " << endl;
+	for (int i = 0; i < gdata.n_n; i++)
+	{
+		for (int j = 0; j < gdata.n_n; j++)
+		{
+			cout << setfill(' ') << setw(5) << setprecision(4) << HG[i][j] << "\t";
+		}
+		cout << endl;
+	}
 
-	
 }
