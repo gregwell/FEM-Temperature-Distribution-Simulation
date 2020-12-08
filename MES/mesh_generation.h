@@ -254,34 +254,27 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 				}
 			}
 		}
-		// TODO: the "ip<points" loops can be executed in just one loop
 	}
 }
 
 void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[], double convective_heat_transfer_coefficient, double delta_x, double delta_y)
 {
-	//TODO: perform only if BC==1 for each node..
-
+	// TODO: 3,4 point Gauss integration method solutions
 	const int max_points = 16;
 	int points = order_of_integration;
 
 	// 666 - test 
 	elem4 element(666);
-	
-	double N[max_points][4];
 
+	// TODO: rethink array sizes
+	double N[max_points][4];
 	double HBC_point[max_points][4][4];
 	double NNT[max_points][4][4];
 	double HBC[16][4][4] = {0.0};
 	double L;
-	//16 zmienic na ilosc elementow maks
-
-	int boundary=0;
-	//bool vertical;
+	
 	for (auto iterator = 1; iterator < n_El; iterator++)
 	{
-
-		//the surface.
 		//boundary = 0 if the first surface, 2 if the right surface, 4i if the top surface, 6 if the left surface
 		for (auto id_el = 0; id_el < 4; id_el++)
 		{
@@ -293,7 +286,7 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 			{
 				if(iterator==1) cout << "input element true id= " << input_element[iterator].id[id_el] << endl;
 				if(iterator==1) cout << "input element true id2= " << input_element[iterator].id[id_el2] << endl;
-				boundary = id_el * 2;
+				int boundary = id_el * 2;
 
 				int ip_1d = 0;
 				for (auto ip = boundary; ip < points + boundary; ip++)
@@ -316,35 +309,16 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 							NNT[ip][i][j] = N[ip][i] * N[ip][j];
 							if (boundary == 0 || boundary == 4) L = delta_x;
 							else L = delta_y;
+							//TODO: patrzec po wspolrzednych a nie tak
 							
 							HBC_point[ip][i][j] = convective_heat_transfer_coefficient * NNT[ip][i][j] * L/2; 
-							HBC[iterator][i][j] += HBC_point[ip][i][j] * element.multiplier[0];
-							input_element[iterator].H[i][j] += HBC[iterator][i][j];
+							input_element[iterator].H[i][j] += HBC_point[ip][i][j] * element.multiplier[0];
 						}
 					}
 				}
 			}
-
-			// DO USUNIECIA COUTY
-			if ( iterator == 1 )
-			{
-				cout << "Wynik dla plaszczyzny od strony(0-dol, 2-prawo,4-gora,6-lewo....    :" << id_el*2 << " ---------------------"<< endl;
-				for (auto i = 0; i < 4; i++)
-				{
-					for (auto j = 0; j < 4; j++)
-					{
-						cout << "HBC[" << i << "][" << j << "] = " << HBC[iterator][i][j] << endl;
-					}
-				}
-			}
-			
 		}
-		
 	}
-	
-
-
-	
 }
 
 void inline generate_mesh()
@@ -405,6 +379,18 @@ void inline generate_mesh()
 
 	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
 	calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y);
+
+
+	//cout << "macierz HG: " << endl;
+	//for (int i = 0; i < gdata.n_n; i++)
+	//{
+	//	for (int j = 0; j < gdata.n_n; j++)
+	//	{
+	//		cout << setfill(' ') << setw(5) << setprecision(4) << Elem[.H[i][j] << "\t";
+	//	}
+	//	cout << endl;
+	//}
+
 	
 	//delete the last row/column TODO
 
