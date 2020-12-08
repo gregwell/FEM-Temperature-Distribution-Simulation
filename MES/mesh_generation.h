@@ -10,10 +10,12 @@ using namespace std;
 struct node {
 	double x; //coordinates
 	double y;
+	int BC;
 	node()
 	{
 		x = 0.0;
 		y = 0.0;
+		BC = 0;
 	}
 };
 
@@ -100,6 +102,27 @@ struct elem4
 				ksi[3 + n * 4] = eta[12 + n] = ip_greater;
 				for (auto i=0; i<4;i++) multiplier[i + n * 4] = weight[i] * weight[n];
 			}
+			break;
+		case 666: 
+			ip = 1.0 / sqrt(3);
+			
+			ksi[0] = -ip;
+			eta[0] = eta[1] = -1;
+			ksi[1] = ip;
+			
+			ksi[2] = ksi[3] = 1;
+			eta[2] = -ip;
+			eta[3] = ip;
+
+			ksi[4] = ip;
+			eta[4] = eta[5] = 1;
+			ksi[5] = -ip;
+
+			ksi[6] = ksi[7] = -1;
+			eta[6] = ip;
+			eta[7] = -ip;
+			
+			
 			break;
 		default:
 			cout << "";
@@ -230,6 +253,97 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 	}
 }
 
+void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[])
+{
+	//TODO: perform only if BC==1 for each node..
+
+	const int max_points = 16;
+	int points = order_of_integration;
+
+	// 666 - test
+	elem4 element(666);
+	
+	double N[max_points][4];
+
+	double HBC_point[max_points][4][4];
+	double NNT[max_points][4][4];
+	double HBC[4][4] = {0.0};
+
+
+	int boundary=0;
+	bool vertical;
+	for (auto iterator = 1; iterator < n_El; iterator++)
+	{
+
+		//the surface.
+		//boundary = 0 if the first surface, 2 if the right surface, 4i if the top surface, 6 if the left surface
+		for (auto id_el = 0; id_el < 4; id_el++)
+		{
+			int id_el2;
+			if (id_el < 3) id_el2 = id_el+1;
+			else id_el2 = 0;
+			
+			if (ND[input_element[iterator].id[id_el]].BC == 1 && ND[input_element[iterator].id[id_el2]].BC == 1)
+			{
+				if(iterator==1) cout << "input element true id= " << input_element[iterator].id[id_el] << endl;
+				if(iterator==1) cout << "input element true id2= " << input_element[iterator].id[id_el2] << endl;
+				boundary = id_el * 2;
+
+				int ip_1d = 0;
+				for (auto ip = boundary; ip < points + boundary; ip++)
+				{
+					N[ip_1d][0] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 - element.eta[ip]);
+					N[ip_1d][1] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 - element.eta[ip]);
+					N[ip_1d][2] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 + element.eta[ip]);
+					N[ip_1d][3] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 + element.eta[ip]);
+					if(iterator==1) cout << " N[ip_1d][0,1,2,3]= " << N[ip_1d][0]<< ", " << N[ip_1d][1] << ", " << N[ip_1d][2] << ", " << N[ip_1d][3] << ", " << endl;
+					if (iterator == 1) cout << "ip: " << ip << ", ip_1d=" << ip_1d << endl;
+					ip_1d++;
+				}
+
+				for (auto ip = 0; ip < points; ip++)
+				{
+					for (auto i = 0; i < 4; i++)
+					{
+						for (auto j = 0; j < 4; j++)
+						{
+							NNT[ip][i][j] = N[ip][i] * N[ip][j];
+							//if (iterator==1) cout << "NNT["<<ip<<"]["<<i<<"]["<<j<<"]= " << NNT[ip][i][j] << endl;
+							HBC_point[ip][i][j] = 25.0 * NNT[ip][i][j] * 0.1/2/3; //TODO: 6 zmienic
+							//if (iterator == 1) cout << "HBC_point[" << ip << "][" << i << "][" << j << "]= " << HBC_point[ip][i][j] << endl;
+							HBC[i][j] += HBC_point[ip][i][j] * 1;
+
+							//if (iterator==1) cout << "HBC[" << i << "][" << j << "] = " << HBC[i][j] << endl;
+							
+							//input_element[iterator].H[i][j] += HBC_point[ip][i][j] * 1;
+						}
+					}
+				}
+			}
+
+			// DO USUNIECIA COUTY
+			if ( iterator == 1 )
+			{
+				cout << "Wynik dla plaszczyzny od strony(0-dol, 2-prawo,4-gora,6-lewo....    :" << id_el*2 << " ---------------------"<< endl;
+				for (auto i = 0; i < 4; i++)
+				{
+					for (auto j = 0; j < 4; j++)
+					{
+
+						cout << "HBC[" << i << "][" << j << "] = " << HBC[i][j] << endl;
+					}
+				}
+			}
+			
+		}
+		
+	}
+	
+
+
+	
+}
+
 void inline generate_mesh()
 {
 	ifstream input_file("data.txt");
@@ -255,6 +369,19 @@ void inline generate_mesh()
 		}
 	}
 
+	n_ND = 1;
+	for (auto i = 0 ; i<gdata.n_n ; i++)
+	{
+		if (ND[n_ND].x == 0 || ND[n_ND].y == 0 || ND[n_ND].y == gdata.w || ND[n_ND].x == gdata.h)
+		{
+			ND[n_ND].BC = 1;
+		}
+		n_ND++;
+	}
+
+
+	
+
 	//ASSINGING NODES TO ELEMENTS
 	int n_El = 1; //node array number
 	int k = 0;
@@ -274,7 +401,8 @@ void inline generate_mesh()
 	}
 
 	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
-
+	calculateHBC(Elem, gdata.order_of_integration, n_El, ND);
+	
 	//delete the last row/column TODO
 
 	double** HG = new double*[gdata.n_n];
