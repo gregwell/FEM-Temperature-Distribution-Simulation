@@ -267,8 +267,8 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 
 	double HBC_point[max_points][4][4];
 	double NNT[max_points][4][4];
-	double HBC[4][4] = {0.0};
-
+	double HBC[16][4][4] = {0.0};
+	//16 zmienic na ilosc elementow maks
 
 	int boundary=0;
 	bool vertical;
@@ -308,14 +308,8 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 						for (auto j = 0; j < 4; j++)
 						{
 							NNT[ip][i][j] = N[ip][i] * N[ip][j];
-							//if (iterator==1) cout << "NNT["<<ip<<"]["<<i<<"]["<<j<<"]= " << NNT[ip][i][j] << endl;
-							HBC_point[ip][i][j] = 25.0 * NNT[ip][i][j] * 0.1/2/3; //TODO: 6 zmienic
-							//if (iterator == 1) cout << "HBC_point[" << ip << "][" << i << "][" << j << "]= " << HBC_point[ip][i][j] << endl;
-							HBC[i][j] += HBC_point[ip][i][j] * 1;
-
-							//if (iterator==1) cout << "HBC[" << i << "][" << j << "] = " << HBC[i][j] << endl;
-							
-							//input_element[iterator].H[i][j] += HBC_point[ip][i][j] * 1;
+							HBC_point[ip][i][j] = 25.0 * NNT[ip][i][j] * 0.1/2/3; //width 0.1 lub height 0.1 podzielic na liczbe elementow po wysokosci/szerokosci
+							HBC[iterator][i][j] += HBC_point[ip][i][j] * 1;
 						}
 					}
 				}
@@ -329,8 +323,7 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 				{
 					for (auto j = 0; j < 4; j++)
 					{
-
-						cout << "HBC[" << i << "][" << j << "] = " << HBC[i][j] << endl;
+						cout << "HBC[" << i << "][" << j << "] = " << HBC[iterator][i][j] << endl;
 					}
 				}
 			}
