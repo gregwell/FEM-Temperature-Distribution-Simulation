@@ -108,13 +108,29 @@ struct elem4
 				for (auto i=0; i<4;i++) multiplier[i + n * 4] = weight[i] * weight[n];
 			}
 			break;
-		case 666: 
+		case 20:
+			//0,1 - first surface // 2,3 - second ... and so on
 			ip = 1.0 / sqrt(3);
 			ksi[0] = eta[2] = ksi[5] = eta[7] = -ip;
 			ksi[1] = eta[3] = ksi[4] = eta[6] = ip;
 			ksi[2] = ksi[3] = eta[4] = eta[5] = 1;
 			eta[0] = eta[1] = ksi[6] = ksi[7] = -1;
-			multiplier[0] = 1;
+			for (auto i = 0; i < 2; i++) multiplier[i] = 1;
+			break;
+		case 30:
+			//0,1,2 - first surface // 3,4,5 - second ... and so on
+			ip = 1.0*sqrt(3.0 / 5.0);
+			weight[0] = weight[2] = 5.0 / 9.0;
+			weight[1] = 8.0 / 9.0;
+			for (auto i = 0; i < 3; i++)
+			{
+				eta[i] = ksi[9 + i] = -1;
+				eta[6 + i] = ksi[3 + i] = 1;
+			}
+			ksi[0] = ksi[6] = eta[3] = eta[9] = -ip;
+			ksi[1] = ksi[7] = eta[4] = eta[10] = 0;
+			ksi[2] = ksi[8] = eta[5] = eta[11] = ip;
+			for (auto i = 0; i < 3; i++) multiplier[i] = weight[i];
 			break;
 		default:
 			cout << "";
@@ -251,10 +267,22 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	// TODO: 3,4 point Gauss integration method solutions
 	const int max_points = 16;
 	int points = order_of_integration;
+	int points_bc; //if there is boundary condition points_bc = {points}{0} (switch in elem4 constructor)
+	
+	if (points == 2) points_bc = 20;
+	else if (points == 3) points_bc = 30;
+	else points_bc = 40;
+	
+	elem4 element(points_bc);
 
-	// 666 - test 
-	elem4 element(666);
+	for (auto i = 0 ; i <12 ; i++)
+	{
+		cout << "ksi[" << i << "]= " << element.ksi[i] << endl;
+		cout << "eta[" << i << "]= " << element.eta[i] << endl;
+	}
 
+	for ( auto i = 0; i<16; i++) cout << "multiplier[" << i << "]= " << element.multiplier[i] << endl;
+	
 	// TODO: rethink array sizes
 	double N[max_points][4];
 	double HBC_point[max_points][4][4];
@@ -278,10 +306,11 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 			{
 				if(iterator==1) cout << "input element true id= " << input_element[iterator].id[id_el] << endl;
 				if(iterator==1) cout << "input element true id2= " << input_element[iterator].id[id_el2] << endl;
-				int boundary = id_el * 2;
+				int boundary = id_el * points;
+				//0 do liczby punktow, 2 do liczby punktow +2
 
 				int ip_1d = 0;
-				for (auto ip = boundary; ip < points + boundary; ip++)
+				for (auto ip = boundary; ip < boundary + points; ip++)
 				{
 					N[ip_1d][0] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 - element.eta[ip]);
 					N[ip_1d][1] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 - element.eta[ip]);
@@ -292,9 +321,9 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 					ip_1d++;
 				}
 
-				for (auto ip = 0; ip < points; ip++)
+				for (auto ip = 0; ip < points; ip++) // integration point 1d
 				{
-					for (auto i = 0; i < 4; i++)
+					for (auto i = 0; i < 4; i++) // surface
 					{
 						if (boundary == 0 || boundary == 4) L = delta_x;
 						else L = delta_y;
@@ -305,11 +334,11 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 							NNT[ip][i][j] = N[ip][i] * N[ip][j];
 							
 							HBC_point[ip][i][j] = convective_heat_transfer_coefficient * NNT[ip][i][j] * L/2; 
-							input_element[iterator].H[i][j] += HBC_point[ip][i][j] * element.multiplier[0];
+							input_element[iterator].H[i][j] += HBC_point[ip][i][j] * element.multiplier[ip];
 						}
 
 						P_point[ip][i] = -convective_heat_transfer_coefficient * N[ip][i] *ambient_temperature * L / 2;
-						input_element[iterator].P[i] += P_point[ip][i] * element.multiplier[0];
+						input_element[iterator].P[i] += P_point[ip][i] * element.multiplier[ip];
 						
 					}
 				}			
