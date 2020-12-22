@@ -73,7 +73,7 @@ struct elem4
 	{
 		switch(order_of_integration)
 		{
-		case 2:
+		case 2: //2 (2D)
 			ip = 1.0 / sqrt(3);
 			for(auto n =0; n<2;n++)
 			{
@@ -82,7 +82,7 @@ struct elem4
 			}
 			for(auto n =0; n<4; n++) multiplier[n] = 1.0;
 			break;
-		case 3:
+		case 3: //3 (2D)
 			ip = 1.0*sqrt(3.0 / 5.0);
 			weight[0] = weight[2] = 5.0 / 9.0;
 			weight[1] = 8.0 / 9.0;
@@ -94,7 +94,7 @@ struct elem4
 				for (auto i = 0; i < 3; i++) multiplier[i + n * 3] = weight[i] * weight[n];
 			}
 			break;
-		case 4:
+		case 4: //4 (2D)
 			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0)*sqrt((6.0 / 5.0)));
 			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0)*sqrt((6.0 / 5.0)));
 			weight[0] = weight[3] = (18.0 - sqrt(30.0)) / 36;
@@ -108,7 +108,7 @@ struct elem4
 				for (auto i=0; i<4;i++) multiplier[i + n * 4] = weight[i] * weight[n];
 			}
 			break;
-		case 20:
+		case 20: // 2 (1D)  for surfaces..
 			//0,1 - first surface // 2,3 - second ... and so on
 			ip = 1.0 / sqrt(3);
 			ksi[0] = eta[2] = ksi[5] = eta[7] = -ip;
@@ -117,7 +117,7 @@ struct elem4
 			eta[0] = eta[1] = ksi[6] = ksi[7] = -1;
 			for (auto i = 0; i < 2; i++) multiplier[i] = 1;
 			break;
-		case 30:
+		case 30: // 3 (1D)
 			//0,1,2 - first surface // 3,4,5 - second ... and so on
 			ip = 1.0*sqrt(3.0 / 5.0);
 			weight[0] = weight[2] = 5.0 / 9.0;
@@ -131,6 +131,24 @@ struct elem4
 			ksi[1] = ksi[7] = eta[4] = eta[10] = 0;
 			ksi[2] = ksi[8] = eta[5] = eta[11] = ip;
 			for (auto i = 0; i < 3; i++) multiplier[i] = weight[i];
+			break;
+
+		case 40:
+			//0,1,2,3 - first surface // 4,5,6,7 - second ... and so on
+			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0)*sqrt((6.0 / 5.0)));
+			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0)*sqrt((6.0 / 5.0)));
+			weight[0] = weight[3] = (18.0 - sqrt(30.0)) / 36;
+			weight[1] = weight[2] = (18.0 + sqrt(30.0)) / 36;
+			for (auto i = 0; i < 4; i++)
+			{
+				eta[i] = ksi[12 + i] = -1;
+				eta[8 + i] = ksi[4 + i] = 1;
+			}
+			ksi[0] = eta[4] = ksi[11] = eta[15] = -ip_greater;
+			ksi[1] = eta[5] = ksi[10] = eta[14] = -ip;
+			ksi[2] = eta[6] = ksi[9] = eta[13] = ip;
+			ksi[3] = eta[7] = ksi[8] = eta[12] = ip_greater;
+			for (auto i = 0; i < 4; i++) multiplier[i] = weight[i];
 			break;
 		default:
 			cout << "";
