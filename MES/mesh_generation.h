@@ -23,6 +23,7 @@ struct element {
 	int id[4]; //id of all four nodes from each side
 	double H[4][4] = { 0.0 }; //H matrix of element
 	double C[4][4] = { 0.0 }; //C matrix of element
+	double P[4] = { 0.0 }; // P vector
 };
 
 struct global_data {
@@ -37,6 +38,7 @@ struct global_data {
 	double density; //(ro)
 	double specific_heat; //(c)
 	double convective_heat_transfer_coefficient; //(alfa)
+	double ambient_temperature;
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -52,6 +54,7 @@ struct global_data {
 		iss >> global_data.density;
 		iss >> global_data.specific_heat;
 		iss >> global_data.convective_heat_transfer_coefficient;
+		iss >> global_data.ambient_temperature;
 		return is;
 	}
 };
@@ -243,7 +246,7 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 	}
 }
 
-void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[], double convective_heat_transfer_coefficient, double delta_x, double delta_y)
+void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[], double convective_heat_transfer_coefficient, double delta_x, double delta_y, double ambient_temperature)
 {
 	// TODO: 3,4 point Gauss integration method solutions
 	const int max_points = 16;
@@ -258,6 +261,9 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	double NNT[max_points][4][4];
 	double HBC[16][4][4] = {0.0};
 	double L;
+
+	double P_point[max_points][4];
+	double P[max_points][4];
 	
 	for (auto iterator = 1; iterator < n_El; iterator++)
 	{
@@ -290,18 +296,23 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 				{
 					for (auto i = 0; i < 4; i++)
 					{
+						if (boundary == 0 || boundary == 4) L = delta_x;
+						else L = delta_y;
+						//TODO: patrzec po wspolrzednych a nie tak
+						
 						for (auto j = 0; j < 4; j++)
 						{
 							NNT[ip][i][j] = N[ip][i] * N[ip][j];
-							if (boundary == 0 || boundary == 4) L = delta_x;
-							else L = delta_y;
-							//TODO: patrzec po wspolrzednych a nie tak
 							
 							HBC_point[ip][i][j] = convective_heat_transfer_coefficient * NNT[ip][i][j] * L/2; 
 							input_element[iterator].H[i][j] += HBC_point[ip][i][j] * element.multiplier[0];
 						}
+
+						P_point[ip][i] = -convective_heat_transfer_coefficient * N[ip][i] *ambient_temperature * L / 2;
+						input_element[iterator].P[i] += P_point[ip][i] * element.multiplier[0];
+						
 					}
-				}
+				}			
 			}
 		}
 	}
@@ -364,39 +375,45 @@ void inline generate_mesh()
 	}
 
 	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
-	calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y);
+	calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y, gdata.ambient_temperature);
 
 
-	//cout << "macierz HG: " << endl;
-	//for (int i = 0; i < gdata.n_n; i++)
-	//{
-	//	for (int j = 0; j < gdata.n_n; j++)
-	//	{
-	//		cout << setfill(' ') << setw(5) << setprecision(4) << Elem[.H[i][j] << "\t";
-	//	}
-	//	cout << endl;
-	//}
+	for (auto iterator = 1; iterator < n_El; iterator++)
+	{
+		cout << "Element nr: " << iterator;
+		for (auto i = 0; i < 4; i++)
+		{
+			cout << " , P[" << i << "]: " << Elem[iterator].P[i] << "       ";
+		}
 
-	
-	//delete the last row/column TODO
+		cout << endl;
+	}
+
+	double PG[16] = {0.0};
+	// TODO : delete the last row/column 
 
 	double** HG = new double*[gdata.n_n];
 	double** CG = new double*[gdata.n_n];
 	
 	for (int i = 0; i < gdata.n_n; i++) 
 	{
-		HG[i] = new double[gdata.n_n];
+		HG[i] = new double[gdata.n_n] ;
 		CG[i] = new double[gdata.n_n];
-	}
-	
-	for (int i = 0; i < gdata.n_n; i++)
-	{
-		for (int j = 0; j < gdata.n_n; j++)
+		for ( auto j=0; j<gdata.n_n ; j++)
 		{
-			HG[i][j] = 0.0;
+			HG[i][j] = { 0.0 };
 			CG[i][j] = 0.0;
 		}
 	}
+	
+	//for (int i = 0; i < gdata.n_n; i++)
+	//{
+	//	for (int j = 0; j < gdata.n_n; j++)
+	//	{
+	//		HG[i][j] = 0.0;
+	//		CG[i][j] = 0.0;
+	//	}
+	//}
 
 	for (int k = 1; k < gdata.n_e; k++)
 	{
@@ -407,6 +424,7 @@ void inline generate_mesh()
 				HG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].H[i][j];
 				CG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].C[i][j];
 			}
+			PG[Elem[k].id[i]] += Elem[k].P[i];
 		}
 	}
 
@@ -429,5 +447,12 @@ void inline generate_mesh()
 		}
 		cout << endl;
 	}
+
+	cout << "Wektor PG: " << endl;
+	for (int j = 0; j < gdata.n_n; j++)
+	{
+		cout <<fixed << setprecision(2) << PG[j] << endl;
+	}
+
 
 }
