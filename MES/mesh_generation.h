@@ -522,6 +522,9 @@ void inline generate_mesh()
 		cout << "PRINTING PR VECTOR: " << endl;
 		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PR[j] << endl;
 
+		//SOLVING THE SYSTEM OF LINEAR EQUATIONS: HR * {t} = PR
+
+
 		
 
 	}
