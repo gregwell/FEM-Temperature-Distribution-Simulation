@@ -444,8 +444,8 @@ void inline generate_mesh()
 
 
 	//DEFINING GLOBAL MATRICES.
-	double PG[16] = { 0.0 }; // TODO: dynamic sizing
-	double PR[16] = { 0.0 }; // replacement P for SOE
+	double PG[17] = { 0.0 }; // TODO: dynamic sizing
+	double PR[17] = { 0.0 }; // replacement P for SOE
 	
 	double** HG = new double*[gdata.n_n]; 	// TODO : delete the last row/column 
 	double** CG = new double*[gdata.n_n];
@@ -477,10 +477,11 @@ void inline generate_mesh()
 		calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y, gdata.ambient_temperature);
 
 		// 3. HG, CG, PG MATRICES AGGREGATION
-		for (auto k = 1; k < gdata.n_e; k++)
+		for (auto k = 1; k < gdata.n_e+1; k++)
 		{
 			for (auto i = 0; i < 4; i++)
 			{
+				cout << "P: elem nr: " <<k <<" "<< Elem[k].P[i] << endl;
 				for (auto j = 0; j < 4; j++)
 				{
 					HG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].H[i][j];
@@ -495,7 +496,7 @@ void inline generate_mesh()
 		cout << "PRINTING HG MATRIX: " << endl;
 		print_square_matrix(HG, gdata.n_n);
 		cout << "PRINTING PG VECTOR: " << endl;
-		for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PG[j] << endl;
+		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << endl;
 
 		// CALCULATE REPLACEMENT H (HR):
 		for (auto i = 0; i < gdata.n_n; i++)
@@ -507,20 +508,20 @@ void inline generate_mesh()
 		}
 
 		//CALCULATE REPLACEMENT P (PR)
-		for (auto i = 0; i < gdata.n_n; i++)
+		for (auto i = 1; i < gdata.n_n+1; i++)
 		{
 			PR[i] = PG[i];
-			for (auto j = 0; j < gdata.n_n; j++)
+			for (auto j = 1; j < gdata.n_n+1; j++)
 			{
-				PR[i] += (CG[i][j] / gdata.simulation_step_time) * ND[j].t0;
+				PR[i] -= (CG[i-1][j-1] / gdata.simulation_step_time) * ND[j].t0;
 			}
 		}
 		
-
 		cout << "PRINTING HR MATRIX: " << endl;
 		print_square_matrix(HR, gdata.n_n);
 		cout << "PRINTING PR VECTOR: " << endl;
-		for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PR[j] << endl;
+		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PR[j] << endl;
+
 		
 
 	}
