@@ -5,17 +5,20 @@
 #include <iomanip>
 #include <iostream>
 
+
 using namespace std;
 
 struct node {
 	double x; //coordinates
 	double y;
 	int BC;
+	double t0;
 	node()
 	{
 		x = 0.0;
 		y = 0.0;
 		BC = 0;
+		t0 = 0.0;
 	}
 };
 
@@ -39,6 +42,9 @@ struct global_data {
 	double specific_heat; //(c)
 	double convective_heat_transfer_coefficient; //(alfa)
 	double ambient_temperature;
+	double initial_temperature;
+	double simulation_time;
+	double simulation_step_time;
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -55,6 +61,9 @@ struct global_data {
 		iss >> global_data.specific_heat;
 		iss >> global_data.convective_heat_transfer_coefficient;
 		iss >> global_data.ambient_temperature;
+		iss >> global_data.initial_temperature;
+		iss >> global_data.simulation_time;
+		iss >> global_data.simulation_step_time;
 		return is;
 	}
 };
@@ -365,12 +374,25 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	}
 }
 
+
+void print_square_matrix(double** CG, int n_n) {
+	for (int i = 0; i < n_n; i++)
+	{
+		for (int j = 0; j < n_n; j++)
+		{
+			cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
+		}
+		cout << endl;
+	}
+}
+
 void inline generate_mesh()
 {
+	//READING FROM FILE AND GENERATING FEM MESH
 	ifstream input_file("data.txt");
 	global_data gdata;
 	input_file >> gdata;
-	int n_ND = 1; //node array number.
+	int n_ND = 1; //node array starting index.
 	double x = 0;
 	double y = 0;
 	double delta_x = gdata.w / (gdata.n_w - 1); //x-axis element length
@@ -378,7 +400,7 @@ void inline generate_mesh()
 	gdata.n_n = gdata.n_w*gdata.n_h; //number of nodes
 	gdata.n_e = (gdata.n_w - 1)*(gdata.n_h - 1); //number of elements
 
-	//ASSIGNING COORDINATES(X,Y) TO EACH NODE
+	//ASSIGNING COORDINATES(X,Y) TO EACH NODE (+ INITIAL TEMPERATURE)
 	node *ND = new node[gdata.n_n + 1];
 	for (auto i = 0; i < gdata.n_w; i++) //width
 	{
@@ -386,10 +408,12 @@ void inline generate_mesh()
 		{
 			ND[n_ND].x = i * delta_x;
 			ND[n_ND].y = j * delta_y;
+			ND[n_ND].t0 = gdata.initial_temperature; 
 			n_ND++;
 		}
 	}
 
+	//SETTING BOUNDARY CONDITION (BC) FLAG DEPENDING WHETHER THE NODE LIES ON A SIDE EDGE
 	n_ND = 1;
 	for (auto i = 0 ; i<gdata.n_n ; i++)
 	{
@@ -399,9 +423,6 @@ void inline generate_mesh()
 		}
 		n_ND++;
 	}
-
-
-	
 
 	//ASSINGING NODES TO ELEMENTS
 	int n_El = 1; //node array number
@@ -421,85 +442,89 @@ void inline generate_mesh()
 		k++;
 	}
 
-	calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
-	calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y, gdata.ambient_temperature);
 
-
-	for (auto iterator = 1; iterator < n_El; iterator++)
-	{
-		cout << "Element nr: " << iterator;
-		for (auto i = 0; i < 4; i++)
-		{
-			cout << " , P[" << i << "]: " << Elem[iterator].P[i] << "       ";
-		}
-
-		cout << endl;
-	}
-
-	double PG[16] = {0.0};
-	// TODO : delete the last row/column 
-
-	double** HG = new double*[gdata.n_n];
-	double** CG = new double*[gdata.n_n];
+	//DEFINING GLOBAL MATRICES.
+	double PG[16] = { 0.0 }; // TODO: dynamic sizing
+	double PR[16] = { 0.0 }; // replacement P for SOE
 	
-	for (int i = 0; i < gdata.n_n; i++) 
+	double** HG = new double*[gdata.n_n]; 	// TODO : delete the last row/column 
+	double** CG = new double*[gdata.n_n];
+	double** HR = new double*[gdata.n_n]; //replacement H for SOE
+	
+	//ASSIGNING 0.0 TO NEWLY CREATED VALUES
+	for (auto i = 0; i < gdata.n_n; i++)
 	{
-		HG[i] = new double[gdata.n_n] ;
+		HG[i] = new double[gdata.n_n];
 		CG[i] = new double[gdata.n_n];
-		for ( auto j=0; j<gdata.n_n ; j++)
+		HR[i] = new double[gdata.n_n]; //replacement H
+		for (auto j = 0; j < gdata.n_n; j++)
 		{
 			HG[i][j] = { 0.0 };
-			CG[i][j] = 0.0;
+			CG[i][j] = { 0.0 };
+			HR[i][j] = { 0.0 }; // replacement H
 		}
 	}
+
 	
-	//for (int i = 0; i < gdata.n_n; i++)
-	//{
-	//	for (int j = 0; j < gdata.n_n; j++)
-	//	{
-	//		HG[i][j] = 0.0;
-	//		CG[i][j] = 0.0;
-	//	}
-	//}
-
-	for (int k = 1; k < gdata.n_e; k++)
+	//HEAT TRANSFER PRCOESS SIMULATION: CALCULATIONS FOR EACH ITERATION
+	double nt = gdata.simulation_time / gdata.simulation_step_time; // no. of iterations
+	for (int iteration_no= 0; iteration_no < 1; iteration_no++)
 	{
-		for (int i = 0; i < 4; i++)
+		cout << "ITERATION NO: " << iteration_no << "... " << endl;
+		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
+		calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
+		// 2. CALCULATE H(BC party only) AND SUM IT UP TO H, CALCULATE P MATRIX
+		calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y, gdata.ambient_temperature);
+
+		// 3. HG, CG, PG MATRICES AGGREGATION
+		for (auto k = 1; k < gdata.n_e; k++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (auto i = 0; i < 4; i++)
 			{
-				HG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].H[i][j];
-				CG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].C[i][j];
+				for (auto j = 0; j < 4; j++)
+				{
+					HG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].H[i][j];
+					CG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].C[i][j];
+				}
+				PG[Elem[k].id[i]] += Elem[k].P[i];
 			}
-			PG[Elem[k].id[i]] += Elem[k].P[i];
 		}
-	}
 
-	cout << "macierz CG: " << endl;
-	for (int i = 0; i < gdata.n_n; i++)
-	{
-		for (int j = 0; j < gdata.n_n; j++)
+		cout << "PRINTING CG MATRIX: " << endl;
+		print_square_matrix(CG, gdata.n_n);
+		cout << "PRINTING HG MATRIX: " << endl;
+		print_square_matrix(HG, gdata.n_n);
+		cout << "PRINTING PG VECTOR: " << endl;
+		for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PG[j] << endl;
+
+		// CALCULATE REPLACEMENT H (HR):
+		for (auto i = 0; i < gdata.n_n; i++)
 		{
-			cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
+			for (auto j = 0; j < gdata.n_n; j++)
+			{
+				HR[i][j] = HG[i][j] + CG[i][j] / gdata.simulation_step_time;
+			}
 		}
-		cout << endl;
-	}
 
-	cout << "macierz HG: " << endl;
-	for (int i = 0; i < gdata.n_n; i++)
-	{
-		for (int j = 0; j < gdata.n_n; j++)
+		//CALCULATE REPLACEMENT P (PR)
+		for (auto i = 0; i < gdata.n_n; i++)
 		{
-			cout << setfill(' ') << setw(5) << setprecision(4) << HG[i][j] << "\t";
+			PR[i] = PG[i];
+			for (auto j = 0; j < gdata.n_n; j++)
+			{
+				PR[i] += (CG[i][j] / gdata.simulation_step_time) * ND[j].t0;
+			}
 		}
-		cout << endl;
-	}
+		
 
-	cout << "Wektor PG: " << endl;
-	for (int j = 0; j < gdata.n_n; j++)
-	{
-		cout <<fixed << setprecision(2) << PG[j] << endl;
-	}
+		cout << "PRINTING HR MATRIX: " << endl;
+		print_square_matrix(HR, gdata.n_n);
+		cout << "PRINTING PR VECTOR: " << endl;
+		for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PR[j] << endl;
+		
 
+	}
+	//???? reset element.H values?
 
 }
+
