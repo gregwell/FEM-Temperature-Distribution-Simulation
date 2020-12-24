@@ -380,7 +380,8 @@ void inline print_square_matrix(double** CG, int n_n, int style) {
 		for (int j = 0; j < n_n; j++)
 		{
 			if (style == 1) cout << fixed << setfill(' ') << setw(5) << setprecision(3) << CG[i][j] << "\t";
-			else if(style == 2) cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
+			else if (style == 2) cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
+			else if (style == 3) cout << setfill(' ') << setw(5) << setprecision(2) << CG[i][j] << "\t";
 		}
 		cout << endl;
 	}
@@ -388,22 +389,20 @@ void inline print_square_matrix(double** CG, int n_n, int style) {
 
 double max(double* arr, int n)
 {
-	for (auto i = 1; i < n; ++i)
-	{
-		if (arr[0] < arr[i])
-			arr[0] = arr[i];
-	}
-	return arr[0];
+	double max = arr[0];
+	for (auto i = 1; i < n; i++)
+		if (arr[i] > max)
+			max = arr[i];
+	return max;
 }
 
 double min(double* arr, int n)
 {
-	for (auto i = 1; i < n; ++i)
-	{
-		if (arr[i] < arr[0])
-			arr[0] = arr[i];
-	}
-	return arr[0];
+	double min = arr[0];
+	for (auto i = 1; i < n; i++)
+		if (arr[i] < min)
+			min = arr[i];
+	return min;
 }
 
 double* solve_sof(int n_n, double** HR, double* PR)
@@ -419,7 +418,7 @@ double* solve_sof(int n_n, double** HR, double* PR)
 		for (auto j = 0; j < n_n + 1; j++) 
 		{
 			if (j < n_n ) a[i][j] = HR[i][j];
-			else a[i][j] = PR[i+1];
+			else a[i][j] = PR[i];
 		}
 	}
 
@@ -569,12 +568,23 @@ void inline generate_mesh()
 		}
 	}
 
+	double* t0;
+	t0 = new double[gdata.n_n];
+	for (auto i = 0; i < gdata.n_n; i++) t0[i] = ND[i+1].t0;
+	double * t1;
+
+	int nt = gdata.simulation_time / gdata.simulation_step_time; // no. of iterations
+	double* t_min;
+	double* t_max;
+	t_min = new double[nt];
+	t_max = new double[nt];
+
 	
 	//HEAT TRANSFER PRCOESS SIMULATION: CALCULATIONS FOR EACH ITERATION
-	double nt = gdata.simulation_time / gdata.simulation_step_time; // no. of iterations
-	for (int iteration_no= 0; iteration_no < 1; iteration_no++)
+
+	for (int iteration_no= 0; iteration_no < 3; iteration_no++)
 	{
-		cout << "ITERATION NO: " << iteration_no << "... " << endl;
+		cout << "ITERATION NO: " << iteration_no << "... _____________________---------------_____________--------__________---__--_-" << endl;
 		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
 		calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
 		// 2. CALCULATE H(BC party only) AND SUM IT UP TO H, CALCULATE P MATRIX
@@ -603,7 +613,7 @@ void inline generate_mesh()
 		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << " ";
 		cout << endl;
 
-		// CALCULATE REPLACEMENT H (HR):
+		// 4. CALCULATE REPLACEMENT H (HR):
 		for (auto i = 0; i < gdata.n_n; i++)
 		{
 			for (auto j = 0; j < gdata.n_n; j++)
@@ -612,33 +622,67 @@ void inline generate_mesh()
 			}
 		}
 
-		//CALCULATE REPLACEMENT P (PR)
-		for (auto i = 1; i < gdata.n_n+1; i++)
+		// 5. CALCULATE REPLACEMENT P (PR)
+		for (auto i = 0; i < gdata.n_n; i++)
 		{
-			PR[i] = -PG[i];
-			for (auto j = 1; j < gdata.n_n+1; j++)
+			PR[i] = -PG[i+1];
+			for (auto j = 0; j < gdata.n_n; j++)
 			{
-				PR[i] += (CG[i-1][j-1] / gdata.simulation_step_time) * ND[j].t0;
+				PR[i] += (CG[i][j] / gdata.simulation_step_time) * t0[j];
 			}
 		}
 		
 		cout << "PRINTING HR MATRIX: " << endl;
 		print_square_matrix(HR, gdata.n_n,1);
 		cout << "PRINTING PR VECTOR: " << endl;
-		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PR[j] << " ";
+		for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PR[j] << " ";
 		cout << endl;
-		//SOLVING THE SYSTEM OF LINEAR EQUATIONS: HR * {t} = PR
-
-		double * t1;
-		t1 = solve_sof(gdata.n_n, HR, PR);
-
-		double t_max = max(t1, gdata.n_n);
-		double t_min = min(t1, gdata.n_n);
-		cout << "tmax=" << t_max << ", tmin=" << t_min << endl;
 		
+		//6. SOLVE THE SYSTEM OF LINEAR EQUATIONS: HR * {t} = PR
+		t1 = solve_sof(gdata.n_n, HR, PR);
+		
+		double temp_t_max = max(t1, gdata.n_n);
+		double temp_t_min = min(t1, gdata.n_n);
+		cout << "tmax=" << temp_t_max << ", tmin=" << temp_t_min << endl;
+		t_min[iteration_no] = temp_t_min;
+		t_max[iteration_no] = temp_t_max;
+		
+		
+		t0 = t1;
 
+		// 0.0 to the values:
+		for (auto i = 0; i < gdata.n_n; i++)
+		{
+			for (auto j = 0; j < gdata.n_n; j++)
+			{
+				HG[i][j] = { 0.0 };
+				CG[i][j] = { 0.0 };
+			}
+		}
+		for (auto i = 0; i < gdata.n_n+1; i++)
+		{
+			PG[i] = 0.0;
+		}
+		
+		for (auto iterator = 1; iterator < n_El; iterator++)
+		{
+			for (auto i = 0; i < 4; i++)
+			{
+				for (auto j = 0; j < 4; j++)
+				{
+					Elem[iterator].C[i][j] = 0.0;
+					Elem[iterator].H[i][j] = 0.0;
+					
+				}
+				Elem[iterator].P[i] = 0.0;
+			}
+		}
 	}
-	//???? reset element.H values?
 
+	cout << "After 50s \t100s \t 150s:" << endl;
+	cout << " tmin:" << t_min[0] << ", " << t_min[1] << ", " << t_min[2] << endl;
+	cout << " tmax:" << t_max[0] << ", " << t_max[1] << ", " << t_max[2] << endl ;
+	
+	
 }
 
