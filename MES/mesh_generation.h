@@ -582,7 +582,7 @@ void inline generate_mesh()
 	
 	//HEAT TRANSFER PRCOESS SIMULATION: CALCULATIONS FOR EACH ITERATION
 
-	for (int iteration_no= 0; iteration_no < 3; iteration_no++)
+	for (int iteration_no= 0; iteration_no < nt; iteration_no++)
 	{
 		cout << "ITERATION NO: " << iteration_no << "... _____________________---------------_____________--------__________---__--_-" << endl;
 		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
@@ -678,10 +678,17 @@ void inline generate_mesh()
 			}
 		}
 	}
-
-	cout << "After 50s \t100s \t 150s:" << endl;
-	cout << " tmin:" << t_min[0] << ", " << t_min[1] << ", " << t_min[2] << endl;
-	cout << " tmax:" << t_max[0] << ", " << t_max[1] << ", " << t_max[2] << endl ;
+	int g = 0;
+	for (int j = 0; j < nt; j++)
+	{
+		g += 50;
+		cout << fixed << setprecision(2)<<"   " << g << "  |";
+	}
+	cout << " [after seconds]" << endl;
+	for (int j = 0; j < nt; j++) cout << fixed << setprecision(2) << t_min[j] << " | ";
+	cout << " [t_min]" << endl;
+	for (int j = 0; j < nt; j++) cout << fixed << setprecision(2) << t_max[j] << " | ";
+	cout << " [t_max]" << endl;
 	
 	
 }
