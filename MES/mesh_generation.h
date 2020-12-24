@@ -374,16 +374,120 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	}
 }
 
-
-void print_square_matrix(double** CG, int n_n) {
+void inline print_square_matrix(double** CG, int n_n, int style) {
 	for (int i = 0; i < n_n; i++)
 	{
 		for (int j = 0; j < n_n; j++)
 		{
-			cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
+			if (style == 1) cout << fixed << setfill(' ') << setw(5) << setprecision(3) << CG[i][j] << "\t";
+			else if(style == 2) cout << setfill(' ') << setw(5) << setprecision(4) << CG[i][j] << "\t";
 		}
 		cout << endl;
 	}
+}
+
+double max(double* arr, int n)
+{
+	for (auto i = 1; i < n; ++i)
+	{
+		if (arr[0] < arr[i])
+			arr[0] = arr[i];
+	}
+	return arr[0];
+}
+
+double min(double* arr, int n)
+{
+	for (auto i = 1; i < n; ++i)
+	{
+		if (arr[i] < arr[0])
+			arr[0] = arr[i];
+	}
+	return arr[0];
+}
+
+double* solve_sof(int n_n, double** HR, double* PR)
+{
+	//CREATING TEMPORARY MATRIX TO MERGE HR MATRIX WITH PR VECTOR
+	double **a;
+	a = new double*[n_n];
+	for (auto i = 0; i < n_n; ++i) a[i] = new double[n_n + 1]; 
+
+	
+	for (auto i = 0; i < n_n; i++) 
+	{
+		for (auto j = 0; j < n_n + 1; j++) 
+		{
+			if (j < n_n ) a[i][j] = HR[i][j];
+			else a[i][j] = PR[i+1];
+		}
+	}
+
+	cout << "THE a MATRIX BEFORE PIVOTISATION" << endl;
+	for (int i = 0; i < n_n; i++) {
+		for (int j = 0; j < n_n + 1; j++) {
+			if (j > n_n -1 ) cout << "| ";
+			cout << a[i][j] << "   ";
+		}
+		cout << "\n";
+	}
+
+	//DEFINING VECTOR TO RETURN SOLUTION
+	double *x;
+	x = new double[n_n];
+
+	//PIVOTISATION
+	for (int i = 0; i < n_n; i++)
+		for (int k = i; k < n_n; k++)
+			if (a[i][i] < a[k][i])
+				for (int j = 0; j <= n_n; j++) {
+					double temp = a[i][j];
+					a[i][j] = a[k][j];
+					a[k][j] = temp;
+				}
+
+	cout << "\nTHE a MATRIX AFTER PIVOTISATION:"<<endl;
+	for (int i = 0; i < n_n; i++) {
+		for (int j = 0; j < n_n + 1; j++) {
+			if (j > n_n - 1) cout << "| ";
+			cout << a[i][j] << "   ";
+		}
+		cout << "\n";
+	}
+
+	//PERFORMING GAUSS ELIMINATION
+	for (int i = 0; i < n_n - 1; i++) // not going to the last row
+		for (int k = i + 1; k < n_n; k++)
+		{
+			double mult = a[k][i] / a[i][i];
+			for (int j = 0; j <= n_n; j++)
+				a[k][j] = a[k][j] - mult * a[i][j]; //make the elements below the pivot equal to zero.
+		}
+
+	cout << "\nTHE MATRIX AFTER GAUSS ELIMINATION:\n";
+	for (int i = 0; i < n_n; i++) {
+		for (int j = 0; j < n_n + 1; j++) {
+			if (j > n_n - 1) cout << "| ";
+			cout << a[i][j] << "   ";
+		}
+		cout << "\n";
+	}
+
+	for (int i = n_n - 1; i >= 0; i--)
+	{
+		x[i] = a[i][n_n];                //x[i] is now the right side of equation in line [i]
+		for (int j = i + 1; j < n_n; j++)
+			if (j != i)            //substract all left side numbers except the coefficient of the variable whose value is being calculated
+				x[i] = x[i] - a[i][j] * x[j];
+		x[i] = x[i] / a[i][i];            //divide the right side of equation by the coefficient of the variable to be calculated
+	}
+	
+	cout << "\nTHE SOLUTION VECTOR :\n";
+	for (int i = 0; i < n_n; i++) cout << x[i] << " ";
+	cout << endl;
+	
+
+	return x;
 }
 
 void inline generate_mesh()
@@ -492,11 +596,12 @@ void inline generate_mesh()
 		}
 
 		cout << "PRINTING CG MATRIX: " << endl;
-		print_square_matrix(CG, gdata.n_n);
+		print_square_matrix(CG, gdata.n_n,2);
 		cout << "PRINTING HG MATRIX: " << endl;
-		print_square_matrix(HG, gdata.n_n);
+		print_square_matrix(HG, gdata.n_n,2);
 		cout << "PRINTING PG VECTOR: " << endl;
-		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << endl;
+		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << " ";
+		cout << endl;
 
 		// CALCULATE REPLACEMENT H (HR):
 		for (auto i = 0; i < gdata.n_n; i++)
@@ -510,21 +615,26 @@ void inline generate_mesh()
 		//CALCULATE REPLACEMENT P (PR)
 		for (auto i = 1; i < gdata.n_n+1; i++)
 		{
-			PR[i] = PG[i];
+			PR[i] = -PG[i];
 			for (auto j = 1; j < gdata.n_n+1; j++)
 			{
-				PR[i] -= (CG[i-1][j-1] / gdata.simulation_step_time) * ND[j].t0;
+				PR[i] += (CG[i-1][j-1] / gdata.simulation_step_time) * ND[j].t0;
 			}
 		}
 		
 		cout << "PRINTING HR MATRIX: " << endl;
-		print_square_matrix(HR, gdata.n_n);
+		print_square_matrix(HR, gdata.n_n,1);
 		cout << "PRINTING PR VECTOR: " << endl;
-		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PR[j] << endl;
-
+		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PR[j] << " ";
+		cout << endl;
 		//SOLVING THE SYSTEM OF LINEAR EQUATIONS: HR * {t} = PR
 
+		double * t1;
+		t1 = solve_sof(gdata.n_n, HR, PR);
 
+		double t_max = max(t1, gdata.n_n);
+		double t_min = min(t1, gdata.n_n);
+		cout << "tmax=" << t_max << ", tmin=" << t_min << endl;
 		
 
 	}

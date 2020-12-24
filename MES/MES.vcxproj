@@ -151,12 +151,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="calculate_integral.h" />
     <ClInclude Include="elem4.h" />
+    <ClInclude Include="GaussElimination.h" />
     <ClInclude Include="mesh_generation.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GaussElimination.cpp" />
     <ClCompile Include="MES.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

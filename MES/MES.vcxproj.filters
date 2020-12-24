@@ -21,10 +21,10 @@
     <ClInclude Include="mesh_generation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="calculate_integral.h">
+    <ClInclude Include="elem4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="elem4.h">
+    <ClInclude Include="GaussElimination.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -33,6 +33,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MES.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GaussElimination.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
