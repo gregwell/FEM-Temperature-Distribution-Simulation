@@ -15,8 +15,8 @@ The general solution can be descirbed by matrix equation:
 
 ![matrices](https://i.imgur.com/Uqq2Hra.png)
 
-Example:
-- bottle cross-section
+Example: (glass bottle, 6 degrees) -> -32 degrees Celsius
+- cross-section
 
 ![nodes](https://i.imgur.com/dPOEOyt.png)
 
