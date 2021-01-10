@@ -27,6 +27,9 @@ struct element {
 	double H[4][4] = { 0.0 }; //H matrix of element
 	double C[4][4] = { 0.0 }; //C matrix of element
 	double P[4] = { 0.0 }; // P vector
+	double thermal_conductivity; //(k)
+	double density; //(ro)
+	double specific_heat; //(c)
 };
 
 struct global_data {
@@ -37,9 +40,9 @@ struct global_data {
 	int n_n; // m_n = m_w * m_h // number of nodes at all
 	int n_e; // n_e = (m_w-1)*(m_h-1) // number of elements
 	int order_of_integration; //number of Gauss points
-	double thermal_conductivity; //(k)
-	double density; //(ro)
-	double specific_heat; //(c)
+	double thermal_conductivity[2]; //(k)
+	double density[2]; //(ro)
+	double specific_heat[2]; //(c)
 	double convective_heat_transfer_coefficient; //(alfa)
 	double ambient_temperature;
 	double initial_temperature;
@@ -56,9 +59,12 @@ struct global_data {
 		iss >> global_data.n_w;
 		iss >> global_data.n_h;
 		iss >> global_data.order_of_integration;
-		iss >> global_data.thermal_conductivity;
-		iss >> global_data.density;
-		iss >> global_data.specific_heat;
+		iss >> global_data.thermal_conductivity[0];
+		iss >> global_data.density[0];
+		iss >> global_data.specific_heat[0];
+		iss >> global_data.thermal_conductivity[1];
+		iss >> global_data.density[1];
+		iss >> global_data.specific_heat[1];
 		iss >> global_data.convective_heat_transfer_coefficient;
 		iss >> global_data.ambient_temperature;
 		iss >> global_data.initial_temperature;
@@ -165,7 +171,7 @@ struct elem4
 	}
 };
 
-void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration, double thermal_conductivity, double density, double specific_heat)
+void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration)
 {
 	int points = order_of_integration * order_of_integration;
 	const int max_points = 16;
@@ -277,11 +283,11 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 				{
 					dN_dx_dN_dx_T[ip][i][j] = dN_dx[ip][i] * dN_dx[ip][j];
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
-					H_point[ip][i][j] = thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
+					H_point[ip][i][j] = input_element[iterator].thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
 					input_element[iterator].H[i][j] += H_point[ip][i][j]*element.multiplier[ip];
 
 					NNT[ip][i][j] = N[ip][i] * N[ip][j];
-					C_point[ip][i][j] = specific_heat * density * NNT[ip][i][j] * det_J[ip];
+					C_point[ip][i][j] = input_element[iterator].specific_heat * input_element[iterator].density * NNT[ip][i][j] * det_J[ip];
 					input_element[iterator].C[i][j] += C_point[ip][i][j]*element.multiplier[ip];
 				}
 			}
@@ -302,13 +308,13 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	
 	elem4 element(points_bc);
 
-	for (auto i = 0 ; i <12 ; i++)
-	{
-		cout << "ksi[" << i << "]= " << element.ksi[i] << endl;
-		cout << "eta[" << i << "]= " << element.eta[i] << endl;
-	}
+	//for (auto i = 0 ; i <12 ; i++)
+	//{
+	//	cout << "ksi[" << i << "]= " << element.ksi[i] << endl;
+	//	cout << "eta[" << i << "]= " << element.eta[i] << endl;
+	//}
 
-	for ( auto i = 0; i<16; i++) cout << "multiplier[" << i << "]= " << element.multiplier[i] << endl;
+	//for ( auto i = 0; i<16; i++) cout << "multiplier[" << i << "]= " << element.multiplier[i] << endl;
 	
 	// TODO: rethink array sizes
 	double N[max_points][4];
@@ -331,8 +337,8 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 			
 			if (ND[input_element[iterator].id[id_el]].BC == 1 && ND[input_element[iterator].id[id_el2]].BC == 1)
 			{
-				if(iterator==1) cout << "input element true id= " << input_element[iterator].id[id_el] << endl;
-				if(iterator==1) cout << "input element true id2= " << input_element[iterator].id[id_el2] << endl;
+				//if(iterator==1) cout << "input element true id= " << input_element[iterator].id[id_el] << endl;
+				//if(iterator==1) cout << "input element true id2= " << input_element[iterator].id[id_el2] << endl;
 				int boundary = id_el * points;
 				//0 do liczby punktow, 2 do liczby punktow +2
 
@@ -343,8 +349,8 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 					N[ip_1d][1] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 - element.eta[ip]);
 					N[ip_1d][2] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 + element.eta[ip]);
 					N[ip_1d][3] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 + element.eta[ip]);
-					if(iterator==1) cout << " N[ip_1d][0,1,2,3]= " << N[ip_1d][0]<< ", " << N[ip_1d][1] << ", " << N[ip_1d][2] << ", " << N[ip_1d][3] << ", " << endl;
-					if (iterator == 1) cout << "ip: " << ip << ", ip_1d=" << ip_1d << endl;
+					//if(iterator==1) cout << " N[ip_1d][0,1,2,3]= " << N[ip_1d][0]<< ", " << N[ip_1d][1] << ", " << N[ip_1d][2] << ", " << N[ip_1d][3] << ", " << endl;
+					//if (iterator == 1) cout << "ip: " << ip << ", ip_1d=" << ip_1d << endl;
 					ip_1d++;
 				}
 
@@ -422,14 +428,14 @@ double* solve_sof(int n_n, double** HR, double* PR)
 		}
 	}
 
-	cout << "THE a MATRIX BEFORE PIVOTISATION" << endl;
+	/*cout << "THE a MATRIX BEFORE PIVOTISATION" << endl;
 	for (int i = 0; i < n_n; i++) {
 		for (int j = 0; j < n_n + 1; j++) {
 			if (j > n_n -1 ) cout << "| ";
 			cout << a[i][j] << "   ";
 		}
 		cout << "\n";
-	}
+	}*/
 
 	//DEFINING VECTOR TO RETURN SOLUTION
 	double *x;
@@ -445,14 +451,14 @@ double* solve_sof(int n_n, double** HR, double* PR)
 					a[k][j] = temp;
 				}
 
-	cout << "\nTHE a MATRIX AFTER PIVOTISATION:"<<endl;
-	for (int i = 0; i < n_n; i++) {
-		for (int j = 0; j < n_n + 1; j++) {
-			if (j > n_n - 1) cout << "| ";
-			cout << a[i][j] << "   ";
-		}
-		cout << "\n";
-	}
+	//cout << "\nTHE a MATRIX AFTER PIVOTISATION:"<<endl;
+	//for (int i = 0; i < n_n; i++) {
+	//	for (int j = 0; j < n_n + 1; j++) {
+	//		if (j > n_n - 1) cout << "| ";
+	//		cout << a[i][j] << "   ";
+	//	}
+	//	cout << "\n";
+	//}
 
 	//PERFORMING GAUSS ELIMINATION
 	for (int i = 0; i < n_n - 1; i++) // not going to the last row
@@ -463,14 +469,14 @@ double* solve_sof(int n_n, double** HR, double* PR)
 				a[k][j] = a[k][j] - mult * a[i][j]; //make the elements below the pivot equal to zero.
 		}
 
-	cout << "\nTHE MATRIX AFTER GAUSS ELIMINATION:\n";
-	for (int i = 0; i < n_n; i++) {
-		for (int j = 0; j < n_n + 1; j++) {
-			if (j > n_n - 1) cout << "| ";
-			cout << a[i][j] << "   ";
-		}
-		cout << "\n";
-	}
+	//cout << "\nTHE MATRIX AFTER GAUSS ELIMINATION:\n";
+	//for (int i = 0; i < n_n; i++) {
+	//	for (int j = 0; j < n_n + 1; j++) {
+	//		if (j > n_n - 1) cout << "| ";
+	//		cout << a[i][j] << "   ";
+	//	}
+	//	cout << "\n";
+	//}
 
 	for (int i = n_n - 1; i >= 0; i--)
 	{
@@ -481,9 +487,9 @@ double* solve_sof(int n_n, double** HR, double* PR)
 		x[i] = x[i] / a[i][i];            //divide the right side of equation by the coefficient of the variable to be calculated
 	}
 	
-	cout << "\nTHE SOLUTION VECTOR :\n";
-	for (int i = 0; i < n_n; i++) cout << x[i] << " ";
-	cout << endl;
+	//cout << "\nTHE SOLUTION VECTOR :\n";
+	//for (int i = 0; i < n_n; i++) cout << x[i] << " ";
+	//cout << endl;
 	
 
 	return x;
@@ -520,12 +526,15 @@ void inline generate_mesh()
 	n_ND = 1;
 	for (auto i = 0 ; i<gdata.n_n ; i++)
 	{
-		if (ND[n_ND].x == 0 || ND[n_ND].y == 0 || ND[n_ND].y == gdata.w || ND[n_ND].x == gdata.h)
+		if (ND[n_ND].x == 0 || ND[n_ND].y == 0 || ND[n_ND].y == gdata.h|| ND[n_ND].x == gdata.w)
 		{
 			ND[n_ND].BC = 1;
 		}
 		n_ND++;
 	}
+
+
+	
 
 	//ASSINGING NODES TO ELEMENTS
 	int n_El = 1; //node array number
@@ -545,10 +554,27 @@ void inline generate_mesh()
 		k++;
 	}
 
+	//ASSIGNINGS PHYSICAL PROPERTIES TO ELEMENTS
+	int m;
+	for ( int i = 1; i< gdata.n_e+1 ; i++)
+	{
+		for (int j = 0 ; j<4; j++)
+		{
+			if (ND[Elem[i].id[j]].x < delta_x + 0.001 || ND[Elem[i].id[j]].x > gdata.w - delta_x - 0.001 || ND[Elem[i].id[j]].y < delta_y+0.001 || ND[Elem[i].id[j]].y > gdata.h - delta_y - 0.001) m = 0;
+			else m = 1;
+
+			Elem[i].thermal_conductivity = gdata.thermal_conductivity[m];
+			Elem[i].density = gdata.density[m];
+			Elem[i].specific_heat = gdata.specific_heat[m];
+		}
+	}
+	
+
+
 
 	//DEFINING GLOBAL MATRICES.
-	double PG[17] = { 0.0 }; // TODO: dynamic sizing
-	double PR[17] = { 0.0 }; // replacement P for SOE
+	double PG[1000] = { 0.0 }; // TODO: dynamic sizing
+	double PR[1000] = { 0.0 }; // replacement P for SOE
 	
 	double** HG = new double*[gdata.n_n]; 	// TODO : delete the last row/column 
 	double** CG = new double*[gdata.n_n];
@@ -573,6 +599,8 @@ void inline generate_mesh()
 	for (auto i = 0; i < gdata.n_n; i++) t0[i] = ND[i+1].t0;
 	double * t1;
 
+
+
 	int nt = gdata.simulation_time / gdata.simulation_step_time; // no. of iterations
 	double* t_min;
 	double* t_max;
@@ -584,9 +612,9 @@ void inline generate_mesh()
 
 	for (int iteration_no= 0; iteration_no < nt; iteration_no++)
 	{
-		cout << "ITERATION NO: " << iteration_no << "... _____________________---------------_____________--------__________---__--_-" << endl;
+		//cout << "ITERATION NO: " << iteration_no << "... _____________________---------------_____________--------__________---__--_-" << endl;
 		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
-		calculate_H(Elem, n_El, ND, gdata.order_of_integration, gdata.thermal_conductivity, gdata.density, gdata.specific_heat);
+		calculate_H(Elem, n_El, ND, gdata.order_of_integration);
 		// 2. CALCULATE H(BC party only) AND SUM IT UP TO H, CALCULATE P MATRIX
 		calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y, gdata.ambient_temperature);
 
@@ -595,7 +623,7 @@ void inline generate_mesh()
 		{
 			for (auto i = 0; i < 4; i++)
 			{
-				cout << "P: elem nr: " <<k <<" "<< Elem[k].P[i] << endl;
+				//cout << "P: elem nr: " <<k <<" "<< Elem[k].P[i] << endl;
 				for (auto j = 0; j < 4; j++)
 				{
 					HG[Elem[k].id[i] - 1][Elem[k].id[j] - 1] += Elem[k].H[i][j];
@@ -605,13 +633,13 @@ void inline generate_mesh()
 			}
 		}
 
-		cout << "PRINTING CG MATRIX: " << endl;
-		print_square_matrix(CG, gdata.n_n,2);
-		cout << "PRINTING HG MATRIX: " << endl;
-		print_square_matrix(HG, gdata.n_n,2);
-		cout << "PRINTING PG VECTOR: " << endl;
-		for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << " ";
-		cout << endl;
+		//cout << "PRINTING CG MATRIX: " << endl;
+		//print_square_matrix(CG, gdata.n_n,2);
+		//cout << "PRINTING HG MATRIX: " << endl;
+		//print_square_matrix(HG, gdata.n_n,2);
+		//cout << "PRINTING PG VECTOR: " << endl;
+		//for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << " ";
+		//cout << endl;
 
 		// 4. CALCULATE REPLACEMENT H (HR):
 		for (auto i = 0; i < gdata.n_n; i++)
@@ -632,18 +660,23 @@ void inline generate_mesh()
 			}
 		}
 		
-		cout << "PRINTING HR MATRIX: " << endl;
-		print_square_matrix(HR, gdata.n_n,1);
-		cout << "PRINTING PR VECTOR: " << endl;
-		for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PR[j] << " ";
-		cout << endl;
+		//cout << "PRINTING HR MATRIX: " << endl;
+		//print_square_matrix(HR, gdata.n_n,1);
+		//cout << "PRINTING PR VECTOR: " << endl;
+		//for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PR[j] << " ";
+		//cout << endl;
 		
 		//6. SOLVE THE SYSTEM OF LINEAR EQUATIONS: HR * {t} = PR
 		t1 = solve_sof(gdata.n_n, HR, PR);
 		
 		double temp_t_max = max(t1, gdata.n_n);
 		double temp_t_min = min(t1, gdata.n_n);
-		cout << "tmax=" << temp_t_max << ", tmin=" << temp_t_min << endl;
+		//cout << "[" << (iteration_no+1)*gdata.simulation_step_time<<" sec] MAX: " << temp_t_max << "   MIN:" << temp_t_min << endl;
+
+		cout << "[" << (iteration_no + 1)*gdata.simulation_step_time << " sec] " << t1[19] << " " << t1[64] << " " << t1[109] << " " << t1[154] << " " << t1[199] << " " << t1[244] << " " << t1[289] << " " << t1[334] << " " <<
+			t1[379] << " " << t1[424] << " " << t1[469] << " " << t1[514] << " " << t1[559] << endl;
+
+		
 		t_min[iteration_no] = temp_t_min;
 		t_max[iteration_no] = temp_t_max;
 		
