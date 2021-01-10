@@ -15,10 +15,11 @@ The general solution can be descirbed by matrix equation:
 
 ![matrices](https://i.imgur.com/Uqq2Hra.png)
 
-Sample cross-section:
+Example:
+- bottle cross-section
 
 ![nodes](https://i.imgur.com/dPOEOyt.png)
 
-Sample output:
+- output
 
 ![output](https://i.imgur.com/S3KPRJL.png)
