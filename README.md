@@ -2,9 +2,6 @@
 
 App written in C++ allows you to create 2D transient state thermal process simulations using finite element method.
 
-![thermal process simulation](https://i.imgur.com/pe3kN8T.png)
-
-
 Thermal phenomena occurring in the transient state are described by the Fourier equation in the
 following form: 
 
@@ -25,3 +22,7 @@ Sample cross-section:
 Sample output:
 
 ![output](https://i.imgur.com/S3KPRJL.png)
+
+Visualisation of data in commercial software:
+
+![thermal process simulation](https://i.imgur.com/pe3kN8T.png)
