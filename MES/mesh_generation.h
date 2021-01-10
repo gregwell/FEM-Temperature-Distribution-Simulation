@@ -176,8 +176,8 @@ struct elem4
 	}
 };
 
-void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration);
-void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[],
+void calculate_H_C(element input_element[], int n_El, node ND[], int order_of_integration);
+void calculate_HBC_P(element input_element[], int order_of_integration, int n_El, node ND[],
                   double convective_heat_transfer_coefficient, double delta_x, double delta_y,
                   double ambient_temperature);
 void print_square_matrix(double** CG, int n_n, int style);

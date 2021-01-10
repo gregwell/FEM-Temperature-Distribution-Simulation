@@ -5,7 +5,7 @@
 
 using namespace std;
 
-void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration)
+void calculate_H_C(element input_element[], int n_El, node ND[], int order_of_integration)
 {
 	int points = order_of_integration * order_of_integration;
 	const int max_points = 16;
@@ -131,11 +131,10 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 }
 
 
-void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[],
+void calculate_HBC_P(element input_element[], int order_of_integration, int n_El, node ND[],
                   double convective_heat_transfer_coefficient, double delta_x, double delta_y,
                   double ambient_temperature)
 {
-	// TODO: 3,4 point Gauss integration method solutions
 	const int max_points = 16;
 	int points = order_of_integration;
 	int points_bc; //if there is boundary condition points_bc = {points}{0} (switch in elem4 constructor)
@@ -411,9 +410,9 @@ void generate_mesh()
 	for (int iteration_no = 0; iteration_no < nt; iteration_no++)
 	{
 		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
-		calculate_H(Elem, n_El, ND, gdata.order_of_integration);
+		calculate_H_C(Elem, n_El, ND, gdata.order_of_integration);
 		// 2. CALCULATE H(BC party only) AND SUM IT UP TO H, CALCULATE P MATRIX
-		calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x,
+		calculate_HBC_P(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x,
 		             delta_y, gdata.ambient_temperature);
 
 		// 3. HG, CG, PG MATRICES AGGREGATION
