@@ -146,14 +146,6 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 
 	elem4 element(points_bc);
 
-	//for (auto i = 0 ; i <12 ; i++)
-	//{
-	//	cout << "ksi[" << i << "]= " << element.ksi[i] << endl;
-	//	cout << "eta[" << i << "]= " << element.eta[i] << endl;
-	//}
-
-	//for ( auto i = 0; i<16; i++) cout << "multiplier[" << i << "]= " << element.multiplier[i] << endl;
-
 	// TODO: rethink array sizes
 	double N[max_points][4];
 	double HBC_point[max_points][4][4];
@@ -175,10 +167,7 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 
 			if (ND[input_element[iterator].id[id_el]].BC == 1 && ND[input_element[iterator].id[id_el2]].BC == 1)
 			{
-				//if(iterator==1) cout << "input element true id= " << input_element[iterator].id[id_el] << endl;
-				//if(iterator==1) cout << "input element true id2= " << input_element[iterator].id[id_el2] << endl;
 				int boundary = id_el * points;
-				//0 do liczby punktow, 2 do liczby punktow +2
 
 				int ip_1d = 0;
 				for (auto ip = boundary; ip < boundary + points; ip++)
@@ -187,8 +176,6 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 					N[ip_1d][1] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 - element.eta[ip]);
 					N[ip_1d][2] = 1.0 / 4.0 * (1.0 + element.ksi[ip]) * (1.0 + element.eta[ip]);
 					N[ip_1d][3] = 1.0 / 4.0 * (1.0 - element.ksi[ip]) * (1.0 + element.eta[ip]);
-					//if(iterator==1) cout << " N[ip_1d][0,1,2,3]= " << N[ip_1d][0]<< ", " << N[ip_1d][1] << ", " << N[ip_1d][2] << ", " << N[ip_1d][3] << ", " << endl;
-					//if (iterator == 1) cout << "ip: " << ip << ", ip_1d=" << ip_1d << endl;
 					ip_1d++;
 				}
 
@@ -198,7 +185,7 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 					{
 						if (boundary == 0 || boundary == 4) L = delta_x;
 						else L = delta_y;
-						//TODO: patrzec po wspolrzednych a nie tak
+						//TODO: THIS APPLIES ONLY TO RECANGULAR SHAPES OF ELEMENTS - USE PYTHAGORAS THEOREM
 
 						for (auto j = 0; j < 4; j++)
 						{
@@ -249,7 +236,7 @@ double min(double* arr, int n)
 	return min;
 }
 
-double* solve_sof(int n_n, double** HR, double* PR)
+double* solve_soe(int n_n, double** HR, double* PR)
 {
 	//CREATING TEMPORARY MATRIX TO MERGE HR MATRIX WITH PR VECTOR
 	double** a;
@@ -266,15 +253,6 @@ double* solve_sof(int n_n, double** HR, double* PR)
 		}
 	}
 
-	/*cout << "THE a MATRIX BEFORE PIVOTISATION" << endl;
-	for (int i = 0; i < n_n; i++) {
-		for (int j = 0; j < n_n + 1; j++) {
-			if (j > n_n -1 ) cout << "| ";
-			cout << a[i][j] << "   ";
-		}
-		cout << "\n";
-	}*/
-
 	//DEFINING VECTOR TO RETURN SOLUTION
 	double* x;
 	x = new double[n_n];
@@ -290,15 +268,6 @@ double* solve_sof(int n_n, double** HR, double* PR)
 					a[k][j] = temp;
 				}
 
-	//cout << "\nTHE a MATRIX AFTER PIVOTISATION:"<<endl;
-	//for (int i = 0; i < n_n; i++) {
-	//	for (int j = 0; j < n_n + 1; j++) {
-	//		if (j > n_n - 1) cout << "| ";
-	//		cout << a[i][j] << "   ";
-	//	}
-	//	cout << "\n";
-	//}
-
 	//PERFORMING GAUSS ELIMINATION
 	for (int i = 0; i < n_n - 1; i++) // not going to the last row
 		for (int k = i + 1; k < n_n; k++)
@@ -307,15 +276,6 @@ double* solve_sof(int n_n, double** HR, double* PR)
 			for (int j = 0; j <= n_n; j++)
 				a[k][j] = a[k][j] - mult * a[i][j]; //make the elements below the pivot equal to zero.
 		}
-
-	//cout << "\nTHE MATRIX AFTER GAUSS ELIMINATION:\n";
-	//for (int i = 0; i < n_n; i++) {
-	//	for (int j = 0; j < n_n + 1; j++) {
-	//		if (j > n_n - 1) cout << "| ";
-	//		cout << a[i][j] << "   ";
-	//	}
-	//	cout << "\n";
-	//}
 
 	for (int i = n_n - 1; i >= 0; i--)
 	{
@@ -410,25 +370,27 @@ void generate_mesh()
 
 
 	//DEFINING GLOBAL MATRICES.
-	double PG[1000] = {0.0}; // TODO: dynamic sizing
-	double PR[1000] = {0.0}; // replacement P for SOE
 
-	double** HG = new double*[gdata.n_n]; // TODO : delete the last row/column 
+	double *PG = new double[gdata.n_n];
+	double *PR = new double[gdata.n_n];
+	double** HG = new double*[gdata.n_n]; 
 	double** CG = new double*[gdata.n_n];
-	double** HR = new double*[gdata.n_n]; //replacement H for SOE
+	double** HR = new double*[gdata.n_n]; 
 
 	//ASSIGNING 0.0 TO NEWLY CREATED VALUES
 	for (auto i = 0; i < gdata.n_n; i++)
 	{
 		HG[i] = new double[gdata.n_n];
 		CG[i] = new double[gdata.n_n];
-		HR[i] = new double[gdata.n_n]; //replacement H
+		HR[i] = new double[gdata.n_n]; 
 		for (auto j = 0; j < gdata.n_n; j++)
 		{
 			HG[i][j] = {0.0};
 			CG[i][j] = {0.0};
 			HR[i][j] = {0.0}; // replacement H
 		}
+		PG[i] = 0.0;
+		PR[i] = 0.0; //replacement P
 	}
 
 	double* t0;
@@ -448,7 +410,6 @@ void generate_mesh()
 
 	for (int iteration_no = 0; iteration_no < nt; iteration_no++)
 	{
-		//cout << "ITERATION NO: " << iteration_no << "... _____________________---------------_____________--------__________---__--_-" << endl;
 		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
 		calculate_H(Elem, n_El, ND, gdata.order_of_integration);
 		// 2. CALCULATE H(BC party only) AND SUM IT UP TO H, CALCULATE P MATRIX
@@ -470,14 +431,6 @@ void generate_mesh()
 			}
 		}
 
-		//cout << "PRINTING CG MATRIX: " << endl;
-		//print_square_matrix(CG, gdata.n_n,2);
-		//cout << "PRINTING HG MATRIX: " << endl;
-		//print_square_matrix(HG, gdata.n_n,2);
-		//cout << "PRINTING PG VECTOR: " << endl;
-		//for (int j = 1; j < gdata.n_n+1; j++) cout << fixed << setprecision(2) << PG[j] << " ";
-		//cout << endl;
-
 		// 4. CALCULATE REPLACEMENT H (HR):
 		for (auto i = 0; i < gdata.n_n; i++)
 		{
@@ -497,28 +450,19 @@ void generate_mesh()
 			}
 		}
 
-		//cout << "PRINTING HR MATRIX: " << endl;
-		//print_square_matrix(HR, gdata.n_n,1);
-		//cout << "PRINTING PR VECTOR: " << endl;
-		//for (int j = 0; j < gdata.n_n; j++) cout << fixed << setprecision(2) << PR[j] << " ";
-		//cout << endl;
-
 		//6. SOLVE THE SYSTEM OF LINEAR EQUATIONS: HR * {t} = PR
-		t1 = solve_sof(gdata.n_n, HR, PR);
+		t1 = solve_soe(gdata.n_n, HR, PR);
 
 		double temp_t_max = max(t1, gdata.n_n);
 		double temp_t_min = min(t1, gdata.n_n);
-		//cout << "[" << (iteration_no+1)*gdata.simulation_step_time<<" sec] MAX: " << temp_t_max << "   MIN:" << temp_t_min << endl;
-
-		cout << "[" << (iteration_no + 1) * gdata.simulation_step_time << " sec] " << t1[19] << " " << t1[64] << " " <<
-			t1[109] << " " << t1[154] << " " << t1[199] << " " << t1[244] << " " << t1[289] << " " << t1[334] << " " <<
-			t1[379] << " " << t1[424] << " " << t1[469] << " " << t1[514] << " " << t1[559] << endl;
-
+		
+		cout << "[" << (iteration_no+1)*gdata.simulation_step_time<<" sec] MAX: " << temp_t_max << "   MIN:" << temp_t_min << endl;
+		//cout << "[" << (iteration_no + 1) * gdata.simulation_step_time << " sec] " << t1[19] << " " << t1[64] << " " <<
+		//	t1[109] << " " << t1[154] << " " << t1[199] << " " << t1[244] << " " << t1[289] << " " << t1[334] << " " <<
+		//	t1[379] << " " << t1[424] << " " << t1[469] << " " << t1[514] << " " << t1[559] << endl;
 
 		t_min[iteration_no] = temp_t_min;
 		t_max[iteration_no] = temp_t_max;
-
-
 		t0 = t1;
 
 		// 0.0 to the values:
