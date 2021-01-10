@@ -182,9 +182,9 @@ void calculate_HBC_P(element input_element[], int order_of_integration, int n_El
 				{
 					for (auto i = 0; i < 4; i++) // surface
 					{
-						if (boundary == 0 || boundary == 4) L = delta_x;
-						else L = delta_y;
-						//TODO: THIS APPLIES ONLY TO RECANGULAR SHAPES OF ELEMENTS - USE PYTHAGORAS THEOREM
+						double diff1 = pow((ND[input_element[iterator].id[id_el2]].x - ND[input_element[iterator].id[id_el]].x), 2.0);
+						double diff2 = pow((ND[input_element[iterator].id[id_el2]].y - ND[input_element[iterator].id[id_el]].y), 2.0);
+						L = sqrt(diff1 + diff2);
 
 						for (auto j = 0; j < 4; j++)
 						{
