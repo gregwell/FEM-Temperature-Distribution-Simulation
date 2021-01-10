@@ -11,7 +11,6 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 	const int max_points = 16;
 
 
-
 	//ITERATOR == NO OF CURRENT ELEMENT 
 	for (auto iterator = 1; iterator < n_El; iterator++)
 	{
@@ -41,15 +40,15 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 
 			dN_deta[ip][0] = -1.0 / 4.0 * (1 - element.ksi[ip]);
 			dN_deta[ip][1] = -1.0 / 4.0 * (1 + element.ksi[ip]);
-			dN_deta[ip][2] = 1.0 / 4.0* (1 + element.ksi[ip]);
+			dN_deta[ip][2] = 1.0 / 4.0 * (1 + element.ksi[ip]);
 			dN_deta[ip][3] = 1.0 / 4.0 * (1 - element.ksi[ip]);
 		}
 
 		//CALCULATING VALUES OF JACOBI MATRIX COMPONENTS
-		double dx_dksi[max_points] = { 0.0 };
-		double dy_dksi[max_points] = { 0.0 };
-		double dx_deta[max_points] = { 0.0 };
-		double dy_deta[max_points] = { 0.0 };
+		double dx_dksi[max_points] = {0.0};
+		double dy_dksi[max_points] = {0.0};
+		double dx_deta[max_points] = {0.0};
+		double dy_deta[max_points] = {0.0};
 
 		for (auto ip = 0; ip < points; ip++)
 		{
@@ -117,11 +116,13 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 				{
 					dN_dx_dN_dx_T[ip][i][j] = dN_dx[ip][i] * dN_dx[ip][j];
 					dN_dy_dN_dy_T[ip][i][j] = dN_dy[ip][i] * dN_dy[ip][j];
-					H_point[ip][i][j] = input_element[iterator].thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] + dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
+					H_point[ip][i][j] = input_element[iterator].thermal_conductivity * (dN_dx_dN_dx_T[ip][i][j] +
+						dN_dy_dN_dy_T[ip][i][j]) * det_J[ip];
 					input_element[iterator].H[i][j] += H_point[ip][i][j] * element.multiplier[ip];
 
 					NNT[ip][i][j] = N[ip][i] * N[ip][j];
-					C_point[ip][i][j] = input_element[iterator].specific_heat * input_element[iterator].density * NNT[ip][i][j] * det_J[ip];
+					C_point[ip][i][j] = input_element[iterator].specific_heat * input_element[iterator].density * 
+						NNT[ip][i][j] * det_J[ip];
 					input_element[iterator].C[i][j] += C_point[ip][i][j] * element.multiplier[ip];
 				}
 			}
@@ -130,7 +131,9 @@ void calculate_H(element input_element[], int n_El, node ND[], int order_of_inte
 }
 
 
-void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[], double convective_heat_transfer_coefficient, double delta_x, double delta_y, double ambient_temperature)
+void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[],
+                  double convective_heat_transfer_coefficient, double delta_x, double delta_y,
+                  double ambient_temperature)
 {
 	// TODO: 3,4 point Gauss integration method solutions
 	const int max_points = 16;
@@ -155,7 +158,7 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	double N[max_points][4];
 	double HBC_point[max_points][4][4];
 	double NNT[max_points][4][4];
-	double HBC[16][4][4] = { 0.0 };
+	double HBC[16][4][4] = {0.0};
 	double L;
 
 	double P_point[max_points][4];
@@ -207,7 +210,6 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 
 						P_point[ip][i] = -convective_heat_transfer_coefficient * N[ip][i] * ambient_temperature * L / 2;
 						input_element[iterator].P[i] += P_point[ip][i] * element.multiplier[ip];
-
 					}
 				}
 			}
@@ -215,7 +217,8 @@ void calculateHBC(element input_element[], int order_of_integration, int n_El, n
 	}
 }
 
-void print_square_matrix(double** CG, int n_n, int style) {
+void print_square_matrix(double** CG, int n_n, int style)
+{
 	for (int i = 0; i < n_n; i++)
 	{
 		for (int j = 0; j < n_n; j++)
@@ -249,7 +252,7 @@ double min(double* arr, int n)
 double* solve_sof(int n_n, double** HR, double* PR)
 {
 	//CREATING TEMPORARY MATRIX TO MERGE HR MATRIX WITH PR VECTOR
-	double **a;
+	double** a;
 	a = new double*[n_n];
 	for (auto i = 0; i < n_n; ++i) a[i] = new double[n_n + 1];
 
@@ -273,14 +276,15 @@ double* solve_sof(int n_n, double** HR, double* PR)
 	}*/
 
 	//DEFINING VECTOR TO RETURN SOLUTION
-	double *x;
+	double* x;
 	x = new double[n_n];
 
 	//PIVOTISATION
 	for (int i = 0; i < n_n; i++)
 		for (int k = i; k < n_n; k++)
 			if (a[i][i] < a[k][i])
-				for (int j = 0; j <= n_n; j++) {
+				for (int j = 0; j <= n_n; j++)
+				{
 					double temp = a[i][j];
 					a[i][j] = a[k][j];
 					a[k][j] = temp;
@@ -315,11 +319,12 @@ double* solve_sof(int n_n, double** HR, double* PR)
 
 	for (int i = n_n - 1; i >= 0; i--)
 	{
-		x[i] = a[i][n_n];                //x[i] is now the right side of equation in line [i]
+		x[i] = a[i][n_n]; //x[i] is now the right side of equation in line [i]
 		for (int j = i + 1; j < n_n; j++)
-			if (j != i)            //substract all left side numbers except the coefficient of the variable whose value is being calculated
+			if (j != i)
+				//substract all left side numbers except the coefficient of the variable whose value is being calculated
 				x[i] = x[i] - a[i][j] * x[j];
-		x[i] = x[i] / a[i][i];            //divide the right side of equation by the coefficient of the variable to be calculated
+		x[i] = x[i] / a[i][i]; //divide the right side of equation by the coefficient of the variable to be calculated
 	}
 
 	//cout << "\nTHE SOLUTION VECTOR :\n";
@@ -341,11 +346,11 @@ void generate_mesh()
 	double y = 0;
 	double delta_x = gdata.w / (gdata.n_w - 1); //x-axis element length
 	double delta_y = gdata.h / (gdata.n_h - 1); //y-axis element length
-	gdata.n_n = gdata.n_w*gdata.n_h; //number of nodes
-	gdata.n_e = (gdata.n_w - 1)*(gdata.n_h - 1); //number of elements
+	gdata.n_n = gdata.n_w * gdata.n_h; //number of nodes
+	gdata.n_e = (gdata.n_w - 1) * (gdata.n_h - 1); //number of elements
 
 	//ASSIGNING COORDINATES(X,Y) TO EACH NODE (+ INITIAL TEMPERATURE)
-	node *ND = new node[gdata.n_n + 1];
+	node* ND = new node[gdata.n_n + 1];
 	for (auto i = 0; i < gdata.n_w; i++) //width
 	{
 		for (auto j = 0; j < gdata.n_h; j++) //height
@@ -369,12 +374,10 @@ void generate_mesh()
 	}
 
 
-
-
 	//ASSINGING NODES TO ELEMENTS
 	int n_El = 1; //node array number
 	int k = 0;
-	element *Elem = new element[gdata.n_e + 1];
+	element* Elem = new element[gdata.n_e + 1];
 
 	for (auto i = 0; i < gdata.n_w - 1; i++) //width
 	{
@@ -395,7 +398,8 @@ void generate_mesh()
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			if (ND[Elem[i].id[j]].x < delta_x + 0.001 || ND[Elem[i].id[j]].x > gdata.w - delta_x - 0.001 || ND[Elem[i].id[j]].y < delta_y + 0.001 || ND[Elem[i].id[j]].y > gdata.h - delta_y - 0.001) m = 0;
+			if (ND[Elem[i].id[j]].x < delta_x + 0.001 || ND[Elem[i].id[j]].x > gdata.w - delta_x - 0.001 || ND[Elem[i].
+				id[j]].y < delta_y + 0.001 || ND[Elem[i].id[j]].y > gdata.h - delta_y - 0.001) m = 0;
 			else m = 1;
 
 			Elem[i].thermal_conductivity = gdata.thermal_conductivity[m];
@@ -405,13 +409,11 @@ void generate_mesh()
 	}
 
 
-
-
 	//DEFINING GLOBAL MATRICES.
-	double PG[1000] = { 0.0 }; // TODO: dynamic sizing
-	double PR[1000] = { 0.0 }; // replacement P for SOE
+	double PG[1000] = {0.0}; // TODO: dynamic sizing
+	double PR[1000] = {0.0}; // replacement P for SOE
 
-	double** HG = new double*[gdata.n_n]; 	// TODO : delete the last row/column 
+	double** HG = new double*[gdata.n_n]; // TODO : delete the last row/column 
 	double** CG = new double*[gdata.n_n];
 	double** HR = new double*[gdata.n_n]; //replacement H for SOE
 
@@ -423,17 +425,16 @@ void generate_mesh()
 		HR[i] = new double[gdata.n_n]; //replacement H
 		for (auto j = 0; j < gdata.n_n; j++)
 		{
-			HG[i][j] = { 0.0 };
-			CG[i][j] = { 0.0 };
-			HR[i][j] = { 0.0 }; // replacement H
+			HG[i][j] = {0.0};
+			CG[i][j] = {0.0};
+			HR[i][j] = {0.0}; // replacement H
 		}
 	}
 
 	double* t0;
 	t0 = new double[gdata.n_n];
 	for (auto i = 0; i < gdata.n_n; i++) t0[i] = ND[i + 1].t0;
-	double * t1;
-
+	double* t1;
 
 
 	int nt = gdata.simulation_time / gdata.simulation_step_time; // no. of iterations
@@ -451,7 +452,8 @@ void generate_mesh()
 		// 1. CALCULATE H (WITHOUT BC) AND C MATRIX
 		calculate_H(Elem, n_El, ND, gdata.order_of_integration);
 		// 2. CALCULATE H(BC party only) AND SUM IT UP TO H, CALCULATE P MATRIX
-		calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x, delta_y, gdata.ambient_temperature);
+		calculateHBC(Elem, gdata.order_of_integration, n_El, ND, gdata.convective_heat_transfer_coefficient, delta_x,
+		             delta_y, gdata.ambient_temperature);
 
 		// 3. HG, CG, PG MATRICES AGGREGATION
 		for (auto k = 1; k < gdata.n_e + 1; k++)
@@ -508,7 +510,8 @@ void generate_mesh()
 		double temp_t_min = min(t1, gdata.n_n);
 		//cout << "[" << (iteration_no+1)*gdata.simulation_step_time<<" sec] MAX: " << temp_t_max << "   MIN:" << temp_t_min << endl;
 
-		cout << "[" << (iteration_no + 1)*gdata.simulation_step_time << " sec] " << t1[19] << " " << t1[64] << " " << t1[109] << " " << t1[154] << " " << t1[199] << " " << t1[244] << " " << t1[289] << " " << t1[334] << " " <<
+		cout << "[" << (iteration_no + 1) * gdata.simulation_step_time << " sec] " << t1[19] << " " << t1[64] << " " <<
+			t1[109] << " " << t1[154] << " " << t1[199] << " " << t1[244] << " " << t1[289] << " " << t1[334] << " " <<
 			t1[379] << " " << t1[424] << " " << t1[469] << " " << t1[514] << " " << t1[559] << endl;
 
 
@@ -523,8 +526,8 @@ void generate_mesh()
 		{
 			for (auto j = 0; j < gdata.n_n; j++)
 			{
-				HG[i][j] = { 0.0 };
-				CG[i][j] = { 0.0 };
+				HG[i][j] = {0.0};
+				CG[i][j] = {0.0};
 			}
 		}
 		for (auto i = 0; i < gdata.n_n + 1; i++)
@@ -540,7 +543,6 @@ void generate_mesh()
 				{
 					Elem[iterator].C[i][j] = 0.0;
 					Elem[iterator].H[i][j] = 0.0;
-
 				}
 				Elem[iterator].P[i] = 0.0;
 			}
@@ -557,7 +559,4 @@ void generate_mesh()
 	cout << " [t_min]" << endl;
 	for (int j = 0; j < nt; j++) cout << fixed << setprecision(2) << t_max[j] << " | ";
 	cout << " [t_max]" << endl;
-
-
 }
-

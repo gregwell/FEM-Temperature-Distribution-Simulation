@@ -8,11 +8,13 @@
 
 using namespace std;
 
-struct node {
+struct node
+{
 	double x; //coordinates
 	double y;
 	int BC;
 	double t0;
+
 	node()
 	{
 		x = 0.0;
@@ -22,17 +24,19 @@ struct node {
 	}
 };
 
-struct element {
+struct element
+{
 	int id[4]; //id of all four nodes from each side
-	double H[4][4] = { 0.0 }; //H matrix of element
-	double C[4][4] = { 0.0 }; //C matrix of element
-	double P[4] = { 0.0 }; // P vector
+	double H[4][4] = {0.0}; //H matrix of element
+	double C[4][4] = {0.0}; //C matrix of element
+	double P[4] = {0.0}; // P vector
 	double thermal_conductivity; //(k)
 	double density; //(ro)
 	double specific_heat; //(c)
 };
 
-struct global_data {
+struct global_data
+{
 	double w; //width
 	double h; //height
 	int n_w; //number of nodes in width length
@@ -48,6 +52,7 @@ struct global_data {
 	double initial_temperature;
 	double simulation_time;
 	double simulation_step_time;
+
 	friend std::istream& operator>>(std::istream& is, global_data& global_data)
 	{
 		std::string line;
@@ -83,35 +88,35 @@ struct elem4
 	double ip_greater;
 	double weight[4];
 	double multiplier[16];
-	
+
 	elem4(int order_of_integration)
 	{
-		switch(order_of_integration)
+		switch (order_of_integration)
 		{
 		case 2: //2 (2D)
 			ip = 1.0 / sqrt(3);
-			for(auto n =0; n<2;n++)
+			for (auto n = 0; n < 2; n++)
 			{
 				ksi[0 + n * 3] = eta[0 + n] = -ip;
 				ksi[1 + n] = eta[2 + n] = ip;
 			}
-			for(auto n =0; n<4; n++) multiplier[n] = 1.0;
+			for (auto n = 0; n < 4; n++) multiplier[n] = 1.0;
 			break;
 		case 3: //3 (2D)
-			ip = 1.0*sqrt(3.0 / 5.0);
+			ip = 1.0 * sqrt(3.0 / 5.0);
 			weight[0] = weight[2] = 5.0 / 9.0;
 			weight[1] = 8.0 / 9.0;
-			for ( auto n=0; n<3;n++)
+			for (auto n = 0; n < 3; n++)
 			{
-				ksi[0+n*3] = eta[0 + n]  = -ip;
-				ksi[1+n*3] = eta[3 + n] = 0;
-				ksi[2+n*3] = eta[6 + n]= ip;
+				ksi[0 + n * 3] = eta[0 + n] = -ip;
+				ksi[1 + n * 3] = eta[3 + n] = 0;
+				ksi[2 + n * 3] = eta[6 + n] = ip;
 				for (auto i = 0; i < 3; i++) multiplier[i + n * 3] = weight[i] * weight[n];
 			}
 			break;
 		case 4: //4 (2D)
-			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0)*sqrt((6.0 / 5.0)));
-			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0)*sqrt((6.0 / 5.0)));
+			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0) * sqrt((6.0 / 5.0)));
+			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0) * sqrt((6.0 / 5.0)));
 			weight[0] = weight[3] = (18.0 - sqrt(30.0)) / 36;
 			weight[1] = weight[2] = (18.0 + sqrt(30.0)) / 36;
 			for (auto n = 0; n < 4; n++)
@@ -120,7 +125,7 @@ struct elem4
 				ksi[1 + n * 4] = eta[4 + n] = -ip;
 				ksi[2 + n * 4] = eta[8 + n] = ip;
 				ksi[3 + n * 4] = eta[12 + n] = ip_greater;
-				for (auto i=0; i<4;i++) multiplier[i + n * 4] = weight[i] * weight[n];
+				for (auto i = 0; i < 4; i++) multiplier[i + n * 4] = weight[i] * weight[n];
 			}
 			break;
 		case 20: // 2 (1D)  for surfaces..
@@ -134,7 +139,7 @@ struct elem4
 			break;
 		case 30: // 3 (1D)
 			//0,1,2 - first surface // 3,4,5 - second ... and so on
-			ip = 1.0*sqrt(3.0 / 5.0);
+			ip = 1.0 * sqrt(3.0 / 5.0);
 			weight[0] = weight[2] = 5.0 / 9.0;
 			weight[1] = 8.0 / 9.0;
 			for (auto i = 0; i < 3; i++)
@@ -150,8 +155,8 @@ struct elem4
 
 		case 40:
 			//0,1,2,3 - first surface // 4,5,6,7 - second ... and so on
-			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0)*sqrt((6.0 / 5.0)));
-			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0)*sqrt((6.0 / 5.0)));
+			ip = 1.0 * sqrt((3.0 / 7.0) - (2.0 / 7.0) * sqrt((6.0 / 5.0)));
+			ip_greater = 1.0 * sqrt((3.0 / 7.0) + (2.0 / 7.0) * sqrt((6.0 / 5.0)));
 			weight[0] = weight[3] = (18.0 - sqrt(30.0)) / 36;
 			weight[1] = weight[2] = (18.0 + sqrt(30.0)) / 36;
 			for (auto i = 0; i < 4; i++)
@@ -172,7 +177,9 @@ struct elem4
 };
 
 void calculate_H(element input_element[], int n_El, node ND[], int order_of_integration);
-void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[], double convective_heat_transfer_coefficient, double delta_x, double delta_y, double ambient_temperature);
+void calculateHBC(element input_element[], int order_of_integration, int n_El, node ND[],
+                  double convective_heat_transfer_coefficient, double delta_x, double delta_y,
+                  double ambient_temperature);
 void print_square_matrix(double** CG, int n_n, int style);
 double max(double* arr, int n);
 double min(double* arr, int n);
