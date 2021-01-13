@@ -15,11 +15,11 @@ The general solution can be descirbed by matrix equation:
 
 ![matrices](https://i.imgur.com/Uqq2Hra.png)
 
-Example: (glass bottle, 6°C, filled with 40% vodka) -> (freezer, -32°C)
+Sample simulation: Glass bottle (6°C, filled with 40% vodka) was put in the freezer (-32°C). 
 - part of the cross section in the center of a bottle with selected nodes
 
 ![nodes](https://i.imgur.com/dPOEOyt.png)
 
-- output: temperatures of selected nodes after 60 second step time
+- output: temperatures of selected nodes after each 60 second step time
 
 ![output](https://i.imgur.com/S3KPRJL.png)
