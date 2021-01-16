@@ -1,6 +1,6 @@
 # MES
 
-App written in C++ allows you to create 2D transient state thermal process simulations using finite element method.
+App allows you to create 2D transient state thermal process simulations using finite element method.
 
 Thermal phenomena occurring in the transient state are described by the Fourier equation in the
 following form: 
