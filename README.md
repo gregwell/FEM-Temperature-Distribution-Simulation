@@ -1,4 +1,4 @@
-# MES
+# fem-simulations
 
 This app allows you to create 2D transient state thermal process simulations using finite element method.
 
