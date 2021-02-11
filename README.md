@@ -70,12 +70,12 @@ The file must be named **data.txt** and contain the following properties: (one l
 
 ## Sample problem
 
-A glass bottle of 40% vodka kept in a refrigerator at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Part of the mesh in the center :
+A glass bottle of 40% vodka kept in a refrigerator at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Part of the mesh in the center:
 
 ![images/Untitled%205.png](images/Untitled%205.png)
 
 ## Result:
 
-The program calculated that each mesh node will reach a temperature of -23 degrees or lower after exactly 3 hours and 44 minutes. The most important part of console print:
+The program calculated that each mesh node will reach a temperature of -23 degrees or lower after exactly 3 hours and 44 minutes. The most important part of the console print:
 
 ![images/Untitled%206.png](images/Untitled%206.png)
