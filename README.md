@@ -19,9 +19,9 @@ The matrices in the equation are as follows:
 
 ![images/Untitled%203.png](images/Untitled%203.png)
 
-The vector **t0** is known and contains the initial temperatures at each node. **t1** contains the temperatures at each node after chosen step time. We calculate it for each iteration, then the values of **t1** vector are assigned to **t0** vector and the operation is repeated.
+The vector **t0** is known and contains the initial temperatures at each node. The vector **t1** contains the temperatures at each node after chosen step time. We calculate it for each iteration, then the values of **t1** vector are assigned to **t0** vector and the operation is repeated.
 
-The maximum correct step time can be calculated from the following equation:
+The longest correct step time can be calculated from the following equation:
 
 ![images/Untitled%204.png](images/Untitled%204.png)
 
