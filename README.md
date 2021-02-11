@@ -7,15 +7,15 @@ This app allows you to create 2D transient state thermal process simulations usi
 Thermal phenomena occurring in the transient state are described by the Fourier equation in the
 following form:
 
-![FEM%20simulations%208755a58546fb41ab9a6be21e40da2fad/Untitled.png](FEM%20simulations%208755a58546fb41ab9a6be21e40da2fad/Untitled.png)
+![images/Untitled.png](images/Untitled.png)
 
 The general solution can be described by the following system of equations:
 
-![FEM%20simulations%208755a58546fb41ab9a6be21e40da2fad/Untitled%201.png](FEM%20simulations%208755a58546fb41ab9a6be21e40da2fad/Untitled%201.png)
+![images/Untitled%201.png](images/Untitled%201.png)
 
 The matrices in the equation are as follows:
 
-![FEM%20simulations%208755a58546fb41ab9a6be21e40da2fad/Untitled%202.png](FEM%20simulations%208755a58546fb41ab9a6be21e40da2fad/Untitled%202.png)
+![images/Untitled%202.png](images/Untitled%202.png)
 
 The vector **t0** is known and contains the initial temperatures at each node. **t1** contains the temperatures at each node after chosen step time. We calculate it for each iteration, then the values of **t1** vector are assigned to **t0** vector and the operation is repeated.
 
