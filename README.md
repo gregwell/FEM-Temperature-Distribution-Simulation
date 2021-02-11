@@ -70,7 +70,7 @@ The file must be named **data.txt** and contain the following properties: (one l
 
 ## Sample problem
 
-A glass bottle of 40% vodka kept in a refrigerator at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Part of the mesh in the center:
+A glass bottle of 40% vodka kept in a fridge at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Part of the mesh in the center:
 
 ![images/Untitled%205.png](images/Untitled%205.png)
 
