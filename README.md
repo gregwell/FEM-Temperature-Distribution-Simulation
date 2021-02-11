@@ -17,11 +17,13 @@ The matrices in the equation are as follows:
 
 ![images/Untitled%202.png](images/Untitled%202.png)
 
+![images/Untitled%203.png](images/Untitled%203.png)
+
 The vector **t0** is known and contains the initial temperatures at each node. **t1** contains the temperatures at each node after chosen step time. We calculate it for each iteration, then the values of **t1** vector are assigned to **t0** vector and the operation is repeated.
 
 The maximum correct step time can be calculated from the following equation:
 
-![images/Untitled%203.png](images/Untitled%203.png)
+![images/Untitled%204.png](images/Untitled%204.png)
 
 For validation, divide the result by half and compare the calculations. Divide in half until they are the same (or almost the same.).
 
@@ -70,10 +72,10 @@ The file must be named **data.txt** and contain the following properties: (one l
 
 A glass bottle of 40% vodka kept in a refrigerator at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Part of the mesh in the center :
 
-![images/Untitled%204.png](images/Untitled%204.png)
+![images/Untitled%205.png](images/Untitled%205.png)
 
 ## Result:
 
 The program calculated that each mesh node will reach a temperature of -23 degrees or lower after exactly 3 hours and 44 minutes. The most important part of console print:
 
-![images/Untitled%205.png](images/Untitled%205.png)
+![images/Untitled%206.png](images/Untitled%206.png)
