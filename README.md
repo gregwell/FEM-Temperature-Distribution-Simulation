@@ -76,6 +76,6 @@ A glass bottle of 40% vodka kept in a refrigerator at 6 degrees was put into a f
 
 ## Result:
 
-The program calculated that each mesh node will reach a temperature of -23 degrees or lower after exactly 3 hours and 44 minutes. The most important part of the console print:
+The program calculated that 100% of nodes will reach a temperature of -23 degrees or lower after exactly 3 hours and 44 minutes. The most important part of the console print:
 
 ![images/Untitled%206.png](images/Untitled%206.png)
