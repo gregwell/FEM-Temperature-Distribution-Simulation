@@ -33,7 +33,7 @@ k - thermal conductivity
 
 Cp- specific heat
 
-If more than one material is considered in the simulation calculate a result for both and take the smaller one. For validation, divide the result by half and compare the calculations. Divide in half until they are the same (or almost the same.).
+If more than one material is considered calculate a result for both and take the smaller one. For validation, divide the result by half and compare the calculations. Divide in half until they are the same (or almost the same.).
 
 ### Application flow
 
