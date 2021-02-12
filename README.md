@@ -31,7 +31,7 @@ k - thermal conductivity
 
 ρ - density
 
-$C_p$- specific heat
+Cp- specific heat
 
 If more than one material is considered in the simulation calculate a result for both and take the smaller one. For validation, divide the result by half and compare the calculations. Divide in half until they are the same (or almost the same.).
 
