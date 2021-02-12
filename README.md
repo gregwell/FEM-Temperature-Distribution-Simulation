@@ -25,7 +25,15 @@ The longest correct step time can be calculated from the following equation:
 
 ![images/Untitled%204.png](images/Untitled%204.png)
 
-For validation, divide the result by half and compare the calculations. Divide in half until they are the same (or almost the same.).
+n - the shortest side length of the element
+
+k - thermal conductivity
+
+ρ - density
+
+$C_p$- specific heat
+
+If more than one material is considered in the simulation calculate a result for both and take the smaller one. For validation, divide the result by half and compare the calculations. Divide in half until they are the same (or almost the same.).
 
 ### Application flow
 
@@ -70,12 +78,16 @@ The file must be named **data.txt** and contain the following properties: (one l
 
 ## Sample problem
 
-A glass bottle of 40% vodka kept in a fridge at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Part of the mesh in the center:
+### Description
+
+A glass bottle of 40% vodka kept in a refrigerator at 6 degrees was put into a freezer at -32 degrees. Calculate when the vodka freezes (according to [this article](https://wersjatestowa.eu/w-jakich-temperaturach-zamarza-roztwor-etanolu/), a 40% ethanol solution freezes at -23 degrees). Nodes selected for analysis:
 
 ![images/Untitled%205.png](images/Untitled%205.png)
 
-## Result:
+### Result:
 
-The program calculated that 100% of nodes will reach a temperature of -23 degrees or lower after exactly 3 hours and 44 minutes. The most important part of the console print:
+The result shows temperatures in each selected node after each 60 second step time. 
+
+The temperatures at each mesh node will reach a temperature of -23 degrees or lower after exactly 4 hours and 10 minutes. Console output:
 
 ![images/Untitled%206.png](images/Untitled%206.png)
